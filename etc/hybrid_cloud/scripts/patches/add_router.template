@@ -1,0 +1,15 @@
+#!/bin/bash
+openstack_api_subnet=%openstack_api_subnet%
+aws_api_gw=%aws_api_gw%
+openstack_tunnel_subnet=%openstack_tunnel_subnet%
+aws_tunnel_gw=%aws_tunnel_gw%
+
+ip route show | grep ${openstack_api_subnet} && ip route del ${openstack_api_subnet}
+ip route show | grep ${openstack_tunnel_subnet} && ip route del ${openstack_tunnel_subnet}
+
+ip route add ${openstack_api_subnet} via ${aws_api_gw}
+ip route add ${openstack_tunnel_subnet} via ${aws_tunnel_gw}
+
+ip route show table external_api | grep ${openstack_api_subnet} && ip route del table external_api ${openstack_api_subnet}
+ip route add table external_api ${openstack_api_subnet} via ${aws_api_gw}
+

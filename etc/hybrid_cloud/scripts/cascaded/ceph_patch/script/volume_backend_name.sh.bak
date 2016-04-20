@@ -1,0 +1,6 @@
+#!/bin/bash
+. /root/adminrc
+
+VOLUME_TYPE=${1}
+VOLUME_BACKEND_NAME=${2}
+cinder type-key $VOLUME_TYPE set volume_backend_name=$VOLUME_BACKEND_NAME

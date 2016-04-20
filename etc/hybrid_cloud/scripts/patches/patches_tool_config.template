@@ -1,0 +1,35 @@
+[DEFAULT]
+# <PROXY_NUMBER>:<HOST_NAME>
+# PROXY_NUMBER is the number of proxy, HOST_NAME is the host in which you want to deploy porxy in.
+# By using commands "cps host-list", it will show all host, and you can select one host of compute to match proxy number.
+proxy_match_host=%proxy_match_host%
+
+# <PROXY_NUMBER>:<REGION>
+# PROXY_NUMBER is the number of proxy
+# REGION is the region which the proxy will connect with
+proxy_match_region=%proxy_match_region%
+
+# cascaded_add_route is use to define route table in cascaded node. 
+# Use to define GateWay of subnet of AWS network.
+# cascaded_add_route=<SUBNET>:<GATEWAY_IP_ADDRESS>, ...
+# Means when access ip address in SUBNET of AWS network, the package will flow to the GATEWAY_IP_ADDRESS.
+# In this GATEWAY, package will go into VPN tunnel to go to AWS network.
+cascaded_add_route=%cascaded_add_route%
+
+# cascaded_add_table_external_api, this is use to define route of table external_api.
+# cascaded_add_table_external_api=<SUBNET>:<GATEWAY_IP_ADDRESS>
+# There are two VPN tunnel, one is for external_api, this option is for define route to go to this tunnel.
+cascaded_add_table_external_api=%cascaded_add_table_external_api%
+
+# define the path used to backup files which will be overwrite by files of pathces.
+openstack_bak_path=/home/openstack_bak
+
+[ENV]
+OS_AUTH_URL=https://identity.%cascading_domain%:443/identity/v2.0
+OS_USERNAME=cloud_admin
+OS_TENANT_NAME=admin
+NOVA_ENDPOINT_TYPE=publicURL
+CINDER_ENDPOINT_TYPE=publicURL
+OS_ENDPOINT_TYPE=publicURL
+OS_VOLUME_API_VERSION=2
+OS_PASSWORD=FusionSphere123

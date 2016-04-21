@@ -1,2 +1,0 @@
-# Cloud Manager Servie (CMS)
-

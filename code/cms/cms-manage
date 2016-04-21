@@ -1,8 +1,0 @@
-#!/usr/bin/python
-# PBR Generated from u'console_scripts'
-
-import sys
-import manage as m
-
-if __name__ == "__main__":
-    sys.exit(m.main())

@@ -38,8 +38,8 @@ class HWSClient(object):
         self.vbs = VBSService(ak, sk, self.region, self.protocol, self.vbs_host, self.port)
 
 if __name__ == '__main__':
-    ak = 'DQEDQVNGMIW7KZXWO1AX'
-    sk = 't4up1pD7KYs8Nj735aEcTQeYYJrnYjEQvO07L9Q0'
+    ak = '5DTFPKOQFEIN4T7EC2BM'
+    sk = '00JI0Zeoezqafr03bbWZ7pFc1b4Tw0R7A9oZlFsw'
     region = 'cn-north-1'
     protocol = 'https'
     port = '443'

@@ -3,7 +3,6 @@ import pdb
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
-#sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'+ '/' + '..'))
 
 import time
 import socket
@@ -14,16 +13,8 @@ from cloudmanager.environmentinfo import *
 import vcloud_proxy_install as proxy_installer
 import vcloud_cloudinfo as data_handler
 import json
-import cloudmanager.region_mapping
 from cloudmanager.subnet_manager import SubnetManager
 from vcloudcloudpersist import VcloudCloudDataHandler
-
-from pyvcloud import vcloudair
-from pyvcloud.vcloudair import VCA
-from pyvcloud.schema.vcd.v1_5.schemas.vcloud.networkType import NatRuleType, GatewayNatRuleType, ReferenceType, NatServiceType, FirewallRuleType, ProtocolsType
-
-
-
 
 
 LOG = logging.getLogger(__name__)

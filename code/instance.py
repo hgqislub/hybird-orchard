@@ -1209,15 +1209,100 @@ class vCloudCloud(resource.Resource):
         cloud_params['region_name'] = self.properties.get(self.REGION_NAME)
         cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
         cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
-
-
-	    
         cloud_manager = vcloudservice.CloudManager(cloud_params)
 
         return cloud_manager.delete_cloud()
 
 
+class HwsCloud(resource.Resource):
+    PROPERTIES = (
+        CLOUD_TYPE, AZNAME, PROJECT_ID, ACCESS_KEY, SECRET_KEY,
+        PROTOCOL, PORT, REGION, AVAILABILITY_ZONE, HOST,
+        DRIVER_TYPE, ENABLE_NETWORK_CROSS_CLOUDS
+    ) = (
+        'CloudType', 'AZName', 'ProjectId', 'AccessKey', 'SecretKey',
+        'Protocol', 'Port', 'Region', 'AvailabilityZone', 'Host'
+        'DriverType', 'EnableNetworkCrossClouds'
+    )
 
+    properties_schema = {
+        CLOUD_TYPE: properties.Schema(
+            properties.Schema.STRING,
+            _('Type of cloud.')
+        ),
+        AZNAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Availability zone name of hybrid cloud.')
+        ),
+        PROJECT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Project id of hws account.')
+        ),
+        ACCESS_KEY: properties.Schema(
+            properties.Schema.STRING,
+            _('Access key of hws account.')
+        ),
+        SECRET_KEY: properties.Schema(
+            properties.Schema.STRING,
+            _('Secret key of hws account.')
+        ),
+        PROTOCOL: properties.Schema(
+            properties.Schema.STRING,
+            _('Protocol to access hws cloud.')
+        ),
+        PORT: properties.Schema(
+            properties.Schema.NUMBER,
+            _('Port to access hws cloud.')
+        ),
+        REGION: properties.Schema(
+            properties.Schema.STRING,
+            _('Region of hws cloud.')
+        ),
+        AVAILABILITY_ZONE: properties.Schema(
+            properties.Schema.STRING,
+            _('Availability zone of hws cloud.')
+        ),
+        HOST: properties.Schema(
+            properties.Schema.STRING,
+            _('Endpoint host to access hws cloud.')
+        ),
+        DRIVER_TYPE: properties.Schema(
+            properties.Schema.STRING,
+            _('Network driver type, agent or agent_less.')
+        ),
+        ENABLE_NETWORK_CROSS_CLOUDS: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Enable network cross clouds.')
+        )
+    }
+
+    def __init__(self, name, json_snippet, stack):
+        super(HwsCloud, self).__init__(name, json_snippet, stack)
+        self.cloud_params = dict()
+        self.cloud_params['cloud_type'] = self.properties.get(self.CLOUD_TYPE)
+        self.cloud_params['azname'] = self.properties.get(self.AZNAME)
+        self.cloud_params['project_id'] = self.properties.get(self.PROJECT_ID)
+        self.cloud_params['ak'] = self.properties.get(self.ACCESS_KEY)
+        self.cloud_params['sk'] = self.properties.get(self.SECRET_KEY)
+        self.cloud_params['protocol'] = self.properties.get(self.PROTOCOL)
+        self.cloud_params['port'] = self.properties.get(self.PORT)
+        self.cloud_params['region'] = self.properties.get(self.REGION)
+        self.cloud_params['availability_zone'] = self.properties.get(self.AVAILABILITY_ZONE)
+        self.cloud_params['host'] = self.properties.get(self.HOST)
+        self.cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
+        self.cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
+
+        self.cloud_manager = vcloudservice.CloudManager(self.cloud_params)
+        print "This is for adding hws cloud"
+
+    def handle_create(self):
+        return self.cloud_manager.add_cloud()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        pass
+
+    def handle_delete(self):
+        return self.cloud_manager.delete_cloud()
 
 class FusionsphereCloud(resource.Resource):
     PROPERTIES = (

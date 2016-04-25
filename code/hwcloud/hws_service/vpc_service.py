@@ -33,6 +33,47 @@ class VPCService(HWSService):
             uri = '?'.join([uri, str_opts])
         return self.get(uri)
 
+    def create_vpc(self, project_id, name, cidr):
+        """
+        :param project_id: string
+        :param opts: dict
+        :return: dict
+        {
+            u'body': {
+                u'vpcs': [{
+                    u'status': u'OK',
+                    u'cidr': u'172.21.0.0/16',
+                    u'id': u'742cef84-512c-43fb-a469-8e9e87e35459',
+                    u'name': u'VPC_2015-10-21-11-30-28'
+                }]
+            },
+            u'status': 200
+        }
+        """
+        uri = "/v1/%s/vpcs" % project_id
+
+        request_body_dict = {}
+        vpc_map = dict()
+        vpc_map["name"] = name
+        vpc_map["cidr"] = cidr
+
+        request_body_dict["vpc"] = vpc_map
+        request_body_string = json.dumps(request_body_dict)
+
+        return self.post(uri, request_body_string)
+
+    def delete_vpc(self, project_id, vpc_id):
+        """
+        :param project_id: string
+        :param vpc_id: string
+        :return: dict
+        {
+            u'status': 204
+        }
+        """
+        uri = "/v1/%s/vpcs/%s" % (project_id, vpc_id)
+        return self.delete(uri)
+
     def list_vpc_detail(self, project_id, vpc_id):
         """
 
@@ -172,4 +213,15 @@ class VPCService(HWSService):
         return self.post(uri, request_body_string)
 
 
-
+    def delete_subnet(self, project_id, vpc_id, subnet_id):
+        """
+        :param project_id: string
+        :param vpc_id: string
+        :param subnet_id: string
+        :return: dict
+        {
+            u'status': 204
+        }
+        """
+        uri = "/v1/%s/vpcs/%s/subnets/%s" % (project_id, vpc_id, subnet_id)
+        return self.delete(uri)

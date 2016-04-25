@@ -16,97 +16,33 @@ import json
 from cloudmanager.subnet_manager import SubnetManager
 from vcloudcloudpersist import VcloudCloudDataHandler
 from conf_util import *
+from hwcloud.hws_service.hws_client import HWSClient
+
 
 LOG = logging.getLogger(__name__)
 
+_environment_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
+                             'environment.conf')
 _install_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_access_cloud_install.conf')
-
-
-
-def distribute_subnet():
-
-        cloud_subnet = SubnetManager().distribute_subnet_pair()
-        cloud_subnet["hynode_control"] = "172.29.251.0/24"
-        cloud_subnet["hynode_data"] = "172.29.252.0/24"
-        return cloud_subnet
-
-
+_vpc_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
+                             'hws_vpc.conf')
+SUBNET_GATEWAY_TAIL_IP = "1"
 
 class HwsInstaller(utils.CloudUtil):
     def __init__(self, cloud_params):
-        self.cloud_id = "@".join([cloud_params['project_id'], cloud_params['azname']])
-
+        self._init_params(cloud_params)
         self._read_env()
-        cloud_subnet = distribute_subnet()
+        self._read_install_conf()
+        self.installer = HWSClient(cloud_params)
 
-        self.api_cidr=cloud_subnet["cloud_api"]
-        self.tunnel_cidr=cloud_subnet["cloud_tunnel"]
-
-        self.local_api_cidr=self.local_api_subnet
-        self.local_tunnel_cidr=self.local_tunnel_subnet
-
-        self.debug_cidr = None
-        self.base_cidr = None
-
-
-
-
-        if self.local_vpn_public_gw == self.cascading_eip:
-            self.green_ips = [self.local_vpn_public_gw]
-        else:
-            self.green_ips = [self.local_vpn_public_gw, self.cascading_eip]
-
-
-        self.installer = vcloudair.VCA(host=self.vcloud_url, username=self.username, service_type='vcd',
-                                       version='5.5', verify=False)
-
-        install_conf = _read_install_conf()
-        #install_conf = {}
-
-        self.cascaded_image = install_conf["cascaded_image"]
-
-        self.vpn_image = install_conf["vpn_image"]
-
-
-        #vdc network
-        self.api_gw=None,
-        self.api_subnet_cidr=None
-        self.tunnel_gw=None
-        self.tunnel_subnet_cidr=None
-
-        #cascaded
-        self.public_ip_api_reverse = None
-        self.public_ip_api_forward = None
-        self.public_ip_ntp_server = None
-        self.public_ip_ntp_client = None
-        self.public_ip_cps_web = None
-
-
-        self.cascaded_base_ip=None
-        self.cascaded_api_ip=None
-        self.cascaded_tunnel_ip=None
-
-        #vpn
-
-        self.public_ip_vpn = None
-        self.vpn_api_ip = None
-        self.vpn_tunnel_ip = None
-
-
-        self.ext_net_eips = {}
-
-        self.all_public_ip = []
-        self.free_public_ip = []
-
-        self._read_vcloud_access_cloud()
-
-    def init_params(self, cloud_params):
+    def _init_params(self, cloud_params):
+        self.cloud_info = cloud_params
         self.cloud_id = "@".join([cloud_params['project_id'], cloud_params['azname']])
 
     def _read_env(self):
         try:
-            env_info = read_conf(_install_conf)
+            env_info = read_conf(_environment_conf)
             self.env = env_info["env"]
             self.cascading_api_ip = env_info["cascading_api_ip"]
             self.cascading_domain = env_info["cascading_domain"]
@@ -127,21 +63,40 @@ class HwsInstaller(utils.CloudUtil):
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
-    def _distribute_cloud_domain(self, region_name, azname, az_tag):
-        """distribute cloud domain
-        :return:
-        """
-        domain_list = self.cascading_domain.split(".")
-        domainpostfix = ".".join([domain_list[2], domain_list[3]])
-        l_region_name = region_name.lower()
-        cloud_cascaded_domain = ".".join(
-                [azname, l_region_name + az_tag, domainpostfix])
-        return cloud_cascaded_domain
+    def _read_install_conf(self):
+        try:
+            install_info = read_conf(_install_conf)
+            self.cascaded_image = install_info["cascaded_image"]
+            self.cascaded_flavor = install_info["cascaded_flavor"]
+            self.vpn_image = install_info["vpn_image"]
+            self.vpn_flavor = install_info["vpn_flavor"]
 
-    def _domain_to_region(domain):
-        domain_list = domain.split(".")
-        region = domain_list[0] + "." + domain_list[1]
-        return region
+        except IOError as e:
+            error = "read file = ".join([_install_conf, " error"])
+            LOG.error(e)
+            raise ReadEnvironmentInfoFailure(error = error)
+        except KeyError as e:
+            error = "read key = ".join([e.message, " error in file = ", _install_conf])
+            LOG.error(error)
+            raise ReadEnvironmentInfoFailure(error = error)
+
+    def _read_vpc_conf(self):
+        try:
+            vpc_conf = read_conf(_vpc_conf)
+            self.vpc_info = vpc_conf["vpc_info"]
+            self.external_api_info = vpc_conf["external_api_info"]
+            self.tunnel_bearing_info = vpc_conf["tunnel_bearing_info"]
+            self.internal_base_info = vpc_conf["internal_base_info"]
+            self.debug_info = vpc_conf["debug_info"]
+
+        except IOError as e:
+            error = "read file = ".join([_install_conf, " error"])
+            LOG.error(e)
+            raise ReadEnvironmentInfoFailure(error = error)
+        except KeyError as e:
+            error = "read key = ".join([e.message, " error in file = ", _install_conf])
+            LOG.error(error)
+            raise ReadEnvironmentInfoFailure(error = error)
 
     def _read_vcloud_access_cloud(self):
         cloud_info = data_handler.get_vcloud_access_cloud(self.cloud_id)
@@ -165,7 +120,6 @@ class HwsInstaller(utils.CloudUtil):
             self.public_ip_ntp_client = cascaded_info["public_ip_ntp_client"]
             self.public_ip_cps_web = cascaded_info["public_ip_cps_web"]
 
-
             self.cascaded_base_ip= cascaded_info["cascaded_base_ip"]
             self.cascaded_api_ip= cascaded_info["cascaded_api_ip"]
             self.cascaded_tunnel_ip= cascaded_info["cascaded_tunnel_ip"]
@@ -181,7 +135,6 @@ class HwsInstaller(utils.CloudUtil):
             self.ext_net_eips = cloud_info["ext_net_eips"]
 
     def create_vm(self, vapp_name, template_name, catalog_name):
-        #pdb.set_trace()
         result = self.installer.create_vapp(self.vcloud_vdc, vapp_name=vapp_name,
                          template_name=template_name,
                          catalog_name=catalog_name,
@@ -209,25 +162,67 @@ class HwsInstaller(utils.CloudUtil):
             self.installer.block_until_completed(result)
             return True
 
+    def _create_vpc(self):
+        project_id = self.cloud_info["project_id"]
+        name = self.vpc_info["name"]
+        cidr = self.vpc_info["cidr"]
+        vpc_info = self.installer.vpc.create_vpc(project_id, name, cidr)
+        self.vpc_id = vpc_info["vpc"]["id"]
+
+    def _delete_vpc(self):
+        pass
+
+    def _create_subnet(self):
+        project_id = self.cloud_info["project_id"]
+        az = self.cloud_info["availability_zone"]
+        external_api_cidr = self.external_api_info["cidr"]
+        external_api_gateway = self._get_gateway_ip(external_api_cidr)
+        tunnel_bearing_cidr = self.tunnel_bearing_info["cidr"]
+        tunnel_bearing_gateway = self._get_gateway_ip(tunnel_bearing_cidr)
+        internal_base_cidr = self.internal_base_info["cidr"]
+        internal_base_gateway = self._get_gateway_ip(internal_base_cidr)
+        debug_cidr = self.debug_info["cidr"]
+        debug_gateway = self._get_gateway_ip(debug_cidr)
+
+        self.installer.vpc.create_vpc(project_id,
+                                      "external_api",
+                                      external_api_cidr, external_api_gateway,
+                                      az, self.vpc_id)
+        self.installer.vpc.create_vpc(project_id,
+                              "tunnel_bearing",
+                              tunnel_bearing_cidr, tunnel_bearing_gateway,
+                              az, self.vpc_id)
+        self.installer.vpc.create_vpc(project_id,
+                              "internal_base",
+                              internal_base_cidr, internal_base_gateway,
+                              az, self.vpc_id)
+        self.installer.vpc.create_vpc(project_id,
+                              "debug",
+                              debug_cidr, debug_gateway,
+                              az, self.vpc_id)
+
+    @staticmethod
+    def _get_gateway_ip(cidr):
+        ip_list = cidr.split(".")
+        gateway_ip = ".".join(
+                [ip_list[0], ip_list[1], ip_list[2], SUBNET_GATEWAY_TAIL_IP])
+        return gateway_ip
+
+    def delete_subnet(self):
+        pass
+
     def create_network(self):
+        self._create_vpc()
+        self._create_subnet()
         pass
 
     def delete_network(self):
+        self.delete_subnet()
+        self.delete_vpc()
         pass
 
-    def install_proxy(self):
-        return proxy_installer.install_vcloud_proxy()
-
     def cloud_preinstall(self):
-        self.installer_login()
-        network_num = []
-        #pdb.set_trace()
-        while(len(network_num) < 3 ):
-            self.install_network()
-            network_num = self.installer.get_networks(vdc_name=self.vcloud_vdc)
-        #pdb.set_trace()
-        self.set_free_public_ip()
-        self.installer_logout()
+        self.create_network()
 
 
     def set_free_public_ip(self):
@@ -262,15 +257,6 @@ class HwsInstaller(utils.CloudUtil):
         else :
             LOG.error('get free public ip failed, no free ip remain')
             return None
-
-
-    def installer_login(self):
-        self.installer.login(password=self.passwd,org=self.vcloud_org)
-        self.installer.login(token=self.installer.token, org=self.vcloud_org,
-                             org_url=self.installer.vcloud_session.org_url)
-
-    def installer_logout(self):
-        self.installer.logout()
 
     def install_network(self):
         #create vcloud network
@@ -514,6 +500,14 @@ class HwsInstaller(utils.CloudUtil):
             self.uninstall_network()
             network_num = self.installer.get_networks(vdc_name=self.vcloud_vdc)
         self.installer_logout()
+
+    def install_vpc(self):
+        self._install_vpc()
+    def _install_vpc(self):
+
+
+    def uninstall_vpc(self):
+        self._uninstall_vpc()
 
     def install_cascaded(self):
          #pdb.set_trace()

@@ -193,7 +193,7 @@ class VPCService(HWSService):
         """
         uri = "/v1/%s/subnets" % project_id
         request_body_dict = {}
-        subnet_map = {}
+        subnet_map = dict()
         subnet_map["name"] = name
         subnet_map["cidr"] = cidr
         subnet_map["availability_zone"] = availability_zone
@@ -224,4 +224,90 @@ class VPCService(HWSService):
         }
         """
         uri = "/v1/%s/vpcs/%s/subnets/%s" % (project_id, vpc_id, subnet_id)
+        return self.delete(uri)
+
+    def list_public_ips(self, project_id, opts=None):
+        """
+        :param project_id: string
+        :param opts: dict
+        :return: dict
+        {
+            u'status': 200
+            "body"{
+                "publicips": [
+                {
+                    "id": "6285e7be-fd9f-497c-bc2d-dd0bdea6efe0",
+                    "status": "DOWN",
+                    "type": "5_bgp",
+                    "public_ip_address": "161.17.101.9",
+                    "private_ip_address": "192.168.10.5",
+                    "tenant_id": "8b7e35ad379141fc9df3e178bd64f55c",
+                    "create_time": "2015-07-16 04:22:32",
+                    "bandwidth_id": "3fa5b383-5a73-4dcb-a314-c6128546d855",
+                    "bandwidth_share_type": "PER",
+                    "bandwidth_size": 5
+                },
+                {
+                    "id": "80d5b82e-43b9-4f82-809a-37bec5793bd4",
+                    "status": "DOWN",
+                    "type": "5_bgp",
+                    "public_ip_address": "161.17.101.10",
+                    "private_ip_address": "192.168.10.6",
+                    "tenant_id": "8b7e35ad379141fc9df3e178bd64f55c",
+                    "create_time": "2015-07-16 04:23:03",
+                    "bandwidth_id": "a79fd11a-047b-4f5b-8f12-99c178cc780a",
+                    "bandwidth_share_type": "PER",
+                    "bandwidth_size": 5
+                }
+                ]
+            }
+        }
+        """
+        uri = "/v1/%s/publicips" % project_id
+        if opts:
+            str_opts = self.convertDictOptsToString(opts)
+            uri = '?'.join([uri, str_opts])
+        return self.get(uri)
+
+    def create_public_ip(self, project_id, public_ip, bandwidth):
+        """
+        :param project_id: string
+        :param public_ip: dict
+        :param bandwidth: dict
+        :return: dict
+        {
+            "body"{
+                "publicip": {
+                    "id": "f588ccfa-8750-4d7c-bf5d-2ede24414706",
+                    "status": "PENDING_CREATE",
+                    "type": "5_bgp",
+                    "public_ip_address": "161.17.101.7",
+                    "tenant_id": "8b7e35ad379141fc9df3e178bd64f55c",
+                    "create_time": "2015-07-16 04:10:52",
+                    "bandwidth_size": 0
+                }
+            }
+            "status" : 200
+        }
+        """
+        uri = "/v1/%s/publicips" % project_id
+
+        request_body_dict = dict()
+
+        request_body_dict["public_ip"] = public_ip
+        request_body_dict["bandwidth"] = bandwidth
+        request_body_string = json.dumps(request_body_dict)
+
+        return self.post(uri, request_body_string)
+
+    def delete_public_ip(self, project_id, public_ip_id):
+        """
+        :param project_id: string
+        :param public_ip_id: string
+        :return: dict
+        {
+            "status" : 204
+        }
+        """
+        uri = "/v1/%s/publicips/%s" % (project_id, public_ip_id)
         return self.delete(uri)

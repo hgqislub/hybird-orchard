@@ -55,6 +55,10 @@ if __name__ == '__main__':
     root_volume_type = 'SATA'
     availability_zone="cn-north-1a"
     size = 120
+
+    hws_client.ecs.create_server(project_id, image_id, flavor_id, "hgq1", vpcid, nics_subnet_list, root_volume_type,)
+
+
     # job_info = hws_client.evs.create_volume(project_id, availability_zone, size, root_volume_type, name='v_1')
     # print job_info
 

@@ -36,6 +36,14 @@ class UninstallCascadingFailed(CloudManagerException):
     msg_fmt = "failed to uninstall cascading openstack, " \
               "current step: %(current_step)s."
 
+class InstallCascadedFailed(CloudManagerException):
+    msg_fmt = "failed to install cascading openstack, " \
+              "current step: %(current_step)s."
+
+
+class UninstallCascadedFailed(CloudManagerException):
+    msg_fmt = "failed to uninstall cascading openstack, " \
+              "current step: %(current_step)s."
 
 class SSHCommandFailure(CloudManagerException):
     msg_fmt = "failed to execute ssh command : " \

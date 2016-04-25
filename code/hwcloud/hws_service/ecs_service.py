@@ -56,9 +56,9 @@ class ECSService(HWSService):
         uri = '/v2/%s/servers/%s' % (project_id, server_id)
         return self.get(uri)
 
-    def create_server(self, project_id, image_ref, flavor_ref, name, vpcid, nics_subnet_list, root_volume_type,
-                      personality_path=None, personality_contents=None, adminPass=None, public_ip_id=None, count=None,
-                      data_volumes=None, security_groups=None, availability_zone=None, key_name=None):
+    def create_server(self, project_id, image_ref, flavor_ref, name, vpcid, nics_subnet_list, root_volume_type,availability_zone
+                      ,personality_path=None, personality_contents=None, adminPass=None, public_ip_id=None, count=None,
+                      data_volumes=None, security_groups=None, key_name=None):
         """
         Rest method: POST
         Uri for create server: /v1/{project_id}/cloudservers

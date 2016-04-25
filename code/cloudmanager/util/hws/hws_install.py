@@ -16,7 +16,7 @@ import json
 from cloudmanager.subnet_manager import SubnetManager
 from vcloudcloudpersist import VcloudCloudDataHandler
 from conf_util import *
-from hwcloud.hws_service.hws_client import HWSClient
+from hws_util import *
 
 
 LOG = logging.getLogger(__name__)
@@ -28,17 +28,19 @@ _install_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
 _vpc_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_vpc.conf')
 SUBNET_GATEWAY_TAIL_IP = "1"
+HTTP_OK = "200"
 
-class HwsInstaller(utils.CloudUtil):
+class HwsCascadedInstaller(utils.CloudUtil):
     def __init__(self, cloud_params):
         self._init_params(cloud_params)
         self._read_env()
         self._read_install_conf()
-        self.installer = HWSClient(cloud_params)
+
 
     def _init_params(self, cloud_params):
         self.cloud_info = cloud_params
         self.cloud_id = "@".join([cloud_params['project_id'], cloud_params['azname']])
+        self.installer = HwsInstaller(cloud_params)
 
     def _read_env(self):
         try:
@@ -134,46 +136,15 @@ class HwsInstaller(utils.CloudUtil):
         if "ext_net_eips" in cloud_info.keys():
             self.ext_net_eips = cloud_info["ext_net_eips"]
 
-    def create_vm(self, vapp_name, template_name, catalog_name):
-        result = self.installer.create_vapp(self.vcloud_vdc, vapp_name=vapp_name,
-                         template_name=template_name,
-                         catalog_name=catalog_name,
-                         network_name=None,
-                         network_mode='bridged',
-                         vm_name=None,
-                         vm_cpus=None,
-                         vm_memory=None,
-                         deploy='false',
-                         poweron='false')
-        if result == False:
-            LOG.error('create vm faild vapp=%s. vdc=%s' %(vapp_name,self.vcloud_vdc))
-            return False
-        else:
-            self.installer.block_until_completed(result)
-            return True
-
-
-    def delete_vm(self, vapp_name):
-        result = self.installer.delete_vapp(vdc_name=self.vcloud_vdc,vapp_name=vapp_name)
-        if result == False:
-            LOG.error('delete vm faild vapp=%s. vdc=%s' %(vapp_name,self.vcloud_vdc))
-            return False
-        else:
-            self.installer.block_until_completed(result)
-            return True
-
     def _create_vpc(self):
-        project_id = self.cloud_info["project_id"]
         name = self.vpc_info["name"]
         cidr = self.vpc_info["cidr"]
-        vpc_info = self.installer.vpc.create_vpc(project_id, name, cidr)
-        self.vpc_id = vpc_info["vpc"]["id"]
+        self.vpc_id = self.installer.create_vpc(name, cidr)
 
     def _delete_vpc(self):
-        pass
+        self.installer.delete_vpc(self.vpc_id)
 
     def _create_subnet(self):
-        project_id = self.cloud_info["project_id"]
         az = self.cloud_info["availability_zone"]
         external_api_cidr = self.external_api_info["cidr"]
         external_api_gateway = self._get_gateway_ip(external_api_cidr)
@@ -184,22 +155,24 @@ class HwsInstaller(utils.CloudUtil):
         debug_cidr = self.debug_info["cidr"]
         debug_gateway = self._get_gateway_ip(debug_cidr)
 
-        self.installer.vpc.create_vpc(project_id,
-                                      "external_api",
-                                      external_api_cidr, external_api_gateway,
-                                      az, self.vpc_id)
-        self.installer.vpc.create_vpc(project_id,
-                              "tunnel_bearing",
+        self.external_api_id = self.installer.create_subnet("external_api",
+                                external_api_cidr, external_api_gateway,
+                                az, self.vpc_id)
+        self.tunnel_bearing_id = self.installer.create_subnet("tunnel_bearing",
                               tunnel_bearing_cidr, tunnel_bearing_gateway,
                               az, self.vpc_id)
-        self.installer.vpc.create_vpc(project_id,
-                              "internal_base",
+        self.internal_base_id = self.installer.create_subnet("internal_base",
                               internal_base_cidr, internal_base_gateway,
                               az, self.vpc_id)
-        self.installer.vpc.create_vpc(project_id,
-                              "debug",
+        self.debug_id = self.installer.create_subnet("debug",
                               debug_cidr, debug_gateway,
                               az, self.vpc_id)
+
+    def _delete_subnet(self):
+        self.installer.delete_subnet(self.external_api_id)
+        self.installer.delete_subnet(self.tunnel_bearing_id)
+        self.installer.delete_subnet(self.internal_base_id)
+        self.installer.delete_subnet(self.debug_id)
 
     @staticmethod
     def _get_gateway_ip(cidr):
@@ -208,55 +181,19 @@ class HwsInstaller(utils.CloudUtil):
                 [ip_list[0], ip_list[1], ip_list[2], SUBNET_GATEWAY_TAIL_IP])
         return gateway_ip
 
-    def delete_subnet(self):
-        pass
+    def _get_free_public_ip(self):
+        result = self.installer.get_free_public_ip()
+        self.vpn_public_ip = result["public_ip_address"]
+        self.vpn_public_id = result["id"]
 
-    def create_network(self):
-        self._create_vpc()
-        self._create_subnet()
-        pass
-
-    def delete_network(self):
-        self.delete_subnet()
-        self.delete_vpc()
-        pass
+    def _release_public_ip(self):
+        self.installer.release_public_ip()
 
     def cloud_preinstall(self):
-        self.create_network()
+        self._create_vpc()
+        self._create_subnet()
 
 
-    def set_free_public_ip(self):
-        if len(self.all_public_ip) == 0 :
-            the_gw = self.installer.get_gateway(vdc_name=self.vcloud_vdc,gateway_name=self.vcloud_edgegw)
-            self.all_public_ip = sorted(the_gw.get_public_ips(), key=socket.inet_aton)
-            all_public_ip_temp = sorted(the_gw.get_public_ips(), key=socket.inet_aton)
-            #delete edge ip
-            del self.all_public_ip[0]
-            del all_public_ip_temp[0]
-
-        #get 10 free public ip from all public ip
-        count = 0
-        for ip in all_public_ip_temp:
-            data = os.system("ping -c 1 %s > /dev/null 2>&1" % ip)
-            if data!=0:
-                self.free_public_ip.append(ip)
-                self.all_public_ip.remove(ip)
-                count += 1
-            if count > 10:
-                break
-
-        if len(self.free_public_ip) == 0:
-            LOG.error('set free public ip failed, no free ip can be allocate')
-
-
-    def get_free_public_ip(self):
-        free_ip = self.free_public_ip[0]
-        if len(self.free_public_ip) > 0:
-            self.free_public_ip.remove(free_ip)
-            return free_ip
-        else :
-            LOG.error('get free public ip failed, no free ip remain')
-            return None
 
     def install_network(self):
         #create vcloud network

@@ -98,7 +98,7 @@ class SubCloud(object):
             self.configer = vcloudconfiger.VcloudCloudConfig()
             self.cloudinfo = vcloudcloudinfo.VcloudCloudInfo()
         if self.cloud_type == 'HWS':
-            self.installer = hws_installer.HwsInstaller(cloud_params=cloud_params)
+            self.installer = hws_installer.HwsCascadedInstaller(cloud_params=cloud_params)
             self.configer = hws_installer.HwsConfig()
             self.cloudinfo = hws_installer.HwsCloudInfo()
 

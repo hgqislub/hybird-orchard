@@ -150,6 +150,7 @@ class ECSService(HWSService):
         request_server_body['flavorRef'] = flavor_ref
         request_server_body['name'] = name
         request_server_body['vpcid'] = vpcid
+        request_server_body['nics'] = nics_subnet_list
 
         if adminPass:
             request_server_body['adminPass'] = adminPass
@@ -162,14 +163,6 @@ class ECSService(HWSService):
             personality['path'] = personality_path
             personality['contents'] = personality_contents
             request_server_body['personality'] = personality
-
-        if nics_subnet_list:
-            nics_list = []
-            for subnet_id in nics_subnet_list:
-                subnet_dict = {}
-                subnet_dict['subnet_id'] = subnet_id
-                nics_list.append(subnet_dict)
-            request_server_body['nics'] = nics_list
 
         if public_ip_id:
             public_ip_dict = {}

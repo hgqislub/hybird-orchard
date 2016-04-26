@@ -5,10 +5,14 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
 from hwcloud.hws_service.hws_client import HWSClient
 from cloudmanager.install.retry_decorator import RetryDecorator
 from heat.openstack.common import log as logging
+import time
 RSP_STATUS = "status"
-REQ_BODY = "body"
+RSP_BODY = "body"
 RSP_STATUS_OK = "2"
 MAX_RETRY = 10
+
+#unit=second
+SLEEP_TIME = 60
 LOG = logging.getLogger(__name__)
 
 class HwsInstaller(object):
@@ -21,7 +25,7 @@ class HwsInstaller(object):
                     current_step="create vm"))
     def create_vm(self, image_ref, flavor_ref, name, vpcid, nics_subnet_list, root_volume_type,availability_zone,
                       personality_path=None, personality_contents=None, adminPass=None, public_ip_id=None, count=None,
-                      data_volumes=None, security_groups=None, , key_name=None):
+                      data_volumes=None, security_groups=None, key_name=None):
         result = self.hws_client.create_server(self.project_id, image_ref, flavor_ref, name, vpcid, nics_subnet_list, root_volume_type,
                       availability_zone, personality_path, personality_contents, adminPass, public_ip_id, count,
                       data_volumes, security_groups, key_name)
@@ -30,11 +34,11 @@ class HwsInstaller(object):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="create cascaded vm")
 
-        return result[REQ_BODY]["server"]
+        return result[RSP_BODY]["job_id"]
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
                 raise_exception=UninstallCascadedFailed(
-                    current_step="create vm"))
+                    current_step="delete vm"))
     def delete_vm(self, server_id_list, delete_public_ip, delete_volume):
         result = self.hws_client.delete_server\
             (self.project_id, server_id_list, delete_public_ip, delete_volume)
@@ -43,7 +47,7 @@ class HwsInstaller(object):
             LOG.error(result)
             raise UninstallCascadedFailed(current_step="delete cascaded vm")
 
-        return result[REQ_BODY]["server"]
+        return result[RSP_BODY]["server"]
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
                 raise_exception=InstallCascadedFailed(
@@ -55,7 +59,7 @@ class HwsInstaller(object):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="create vpc")
 
-        return result[REQ_BODY]["vpc"]["id"]
+        return result[RSP_BODY]["vpc"]["id"]
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
                 raise_exception=UninstallCascadedFailed(
@@ -78,7 +82,7 @@ class HwsInstaller(object):
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="create subnet")
-        return result[REQ_BODY]["subnet"]["id"]
+        return result[RSP_BODY]["subnet"]["id"]
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
                 raise_exception=UninstallCascadedFailed(
@@ -89,10 +93,10 @@ class HwsInstaller(object):
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
             raise UninstallCascadedFailed(current_step="delete subnet")
-        return result[REQ_BODY]
+        return result[RSP_BODY]
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
-            raise_exception=UninstallCascadedFailed(
+            raise_exception=InstallCascadedFailed(
                 current_step="get job detail"))
     def get_job_detail(self, job_id):
         result = self.hws_client.vpc.get_job_detail(self.project_id, job_id)
@@ -100,7 +104,20 @@ class HwsInstaller(object):
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="get job detail")
-        return result[REQ_BODY]
+        return result[RSP_BODY]
+
+    def block_until_success(self, job_id):
+        result = self.get_job_detail(job_id)
+        server_id = None
+        for i in range(MAX_RETRY):
+            if result[RSP_BODY][RSP_STATUS] != "SUCCESS":
+                time.sleep(SLEEP_TIME)
+            else:
+                server_id = result[RSP_BODY]['entities']['sub_jobs'][0]["entities"]["server_id"]
+                break
+        if server_id is None:
+            raise InstallCascadedFailed(current_step="create vm")
+        return server_id
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
         raise_exception=InstallCascadedFailed(
@@ -112,7 +129,7 @@ class HwsInstaller(object):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="get free public ip")
         free_ip = None
-        public_ips = result[REQ_BODY]["publicips"]
+        public_ips = result[RSP_BODY]["publicips"]
 
         for ip in public_ips:
             if ip["port_id"] is None:
@@ -131,7 +148,7 @@ class HwsInstaller(object):
             if not status.startswith(RSP_STATUS_OK):
                 LOG.error(result)
                 raise InstallCascadedFailed(current_step="create public ip")
-            free_ip = result[REQ_BODY]["publicip"]
+            free_ip = result[RSP_BODY]["publicip"]
             return free_ip
 
     @RetryDecorator(max_retry_count=MAX_RETRY,

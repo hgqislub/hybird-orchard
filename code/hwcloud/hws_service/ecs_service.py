@@ -166,7 +166,7 @@ class ECSService(HWSService):
 
         if public_ip_id:
             public_ip_dict = {}
-            public_ip_dict[id] = public_ip_id
+            public_ip_dict["id"] = public_ip_id
             request_server_body['publicip'] = public_ip_dict
 
         if root_volume_type:

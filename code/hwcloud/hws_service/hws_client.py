@@ -5,7 +5,7 @@ from hwcloud.hws_service.evs_service import EVSService
 from hwcloud.hws_service.ims_service import IMSService
 from hwcloud.hws_service.vpc_service import VPCService
 from hwcloud.hws_service.vbs_service import VBSService
-
+import pdb
 class HWSClient(object):
     def __init__(self, cloud_info):
         self.ak = cloud_info['ak']
@@ -16,18 +16,18 @@ class HWSClient(object):
         self.host = cloud_info['host']
         self.project_id = cloud_info['project_id']
 
-        host_endpoint = self.region.join('.').join(self.host).join('.com.cn')
-        self.ecs_host = 'ecs.'.join(host_endpoint)
-        self.evs_host = 'evs.'.join(host_endpoint)
-        self.ims_host = 'ims.'.join(host_endpoint)
-        self.vpc_host = 'vpc.'.join(host_endpoint)
-        self.vbs_host = 'vbs.'.join(host_endpoint)
+        host_endpoint = ".".join([self.region, self.host, 'com.cn' ])
+        self.ecs_host = 'ecs.' + host_endpoint
+        self.evs_host = 'evs.' + host_endpoint
+        self.ims_host = 'ims.' + host_endpoint
+        self.vpc_host = 'vpc.' + host_endpoint
+        self.vbs_host = 'vbs.' + host_endpoint
 
-        self.ecs = ECSService(ak, sk, self.region, self.protocol, self.ecs_host, self.port)
-        self.evs = EVSService(ak, sk, self.region, self.protocol, self.evs_host, self.port)
-        self.ims = IMSService(ak, sk, self.region, self.protocol, self.ims_host, self.port)
-        self.vpc = VPCService(ak, sk, self.region, self.protocol, self.vpc_host, self.port)
-        self.vbs = VBSService(ak, sk, self.region, self.protocol, self.vbs_host, self.port)
+        self.ecs = ECSService(self.ak, self.sk, self.region, self.protocol, self.ecs_host, self.port)
+        self.evs = EVSService(self.ak, self.sk, self.region, self.protocol, self.evs_host, self.port)
+        self.ims = IMSService(self.ak, self.sk, self.region, self.protocol, self.ims_host, self.port)
+        self.vpc = VPCService(self.ak, self.sk, self.region, self.protocol, self.vpc_host, self.port)
+        self.vbs = VBSService(self.ak, self.sk, self.region, self.protocol, self.vbs_host, self.port)
 
 if __name__ == '__main__':
     ak = '5DTFPKOQFEIN4T7EC2BM'

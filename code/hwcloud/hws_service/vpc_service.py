@@ -176,8 +176,8 @@ class VPCService(HWSService):
         uri = "/v1/%s/subnets/%s" % (project_id, subnet_id)
         return self.get(uri)
 
-    def create_subnet(self, project_id, name, cidr, availability_zone, vpc_id,
-                      gateway_ip=None, dhcp_enable=None, primary_dns=None, secondary_dns=None):
+    def create_subnet(self, project_id, name, cidr, availability_zone,gateway_ip, vpc_id,
+                      dhcp_enable=None, primary_dns=None, secondary_dns=None):
         """
 
         :param project_id: string
@@ -198,8 +198,7 @@ class VPCService(HWSService):
         subnet_map["cidr"] = cidr
         subnet_map["availability_zone"] = availability_zone
         subnet_map["vpc_id"] = vpc_id
-        if gateway_ip:
-            subnet_map["gateway_ip"] = gateway_ip
+        subnet_map["gateway_ip"] = gateway_ip
         if dhcp_enable:
             subnet_map["dhcp_enable"] = dhcp_enable
         if primary_dns:
@@ -294,7 +293,7 @@ class VPCService(HWSService):
 
         request_body_dict = dict()
 
-        request_body_dict["public_ip"] = public_ip
+        request_body_dict["publicip"] = public_ip
         request_body_dict["bandwidth"] = bandwidth
         request_body_string = json.dumps(request_body_dict)
 

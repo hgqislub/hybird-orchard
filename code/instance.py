@@ -1221,7 +1221,7 @@ class HwsCloud(resource.Resource):
         DRIVER_TYPE, ENABLE_NETWORK_CROSS_CLOUDS
     ) = (
         'CloudType', 'AZName', 'ProjectId', 'AccessKey', 'SecretKey',
-        'Protocol', 'Port', 'Region', 'AvailabilityZone', 'Host'
+        'Protocol', 'Port', 'Region', 'AvailabilityZone', 'Host',
         'DriverType', 'EnableNetworkCrossClouds'
     )
 
@@ -1251,7 +1251,7 @@ class HwsCloud(resource.Resource):
             _('Protocol to access hws cloud.')
         ),
         PORT: properties.Schema(
-            properties.Schema.NUMBER,
+            properties.Schema.STRING,
             _('Port to access hws cloud.')
         ),
         REGION: properties.Schema(
@@ -1675,5 +1675,6 @@ def resource_mapping():
         'OS::Heat::vCloudCloud': vCloudCloud,
         'OS::Heat::FusionsphereCloud': FusionsphereCloud,
         'OS::Heat::CloudVpn': CloudVpn,
-        'OS::Heat::FusionSphereCloudVpn': FusionSphereCloudVpn
+        'OS::Heat::FusionSphereCloudVpn': FusionSphereCloudVpn,
+        'OS::Heat::HwsCloud': HwsCloud
     }

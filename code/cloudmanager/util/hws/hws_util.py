@@ -14,6 +14,8 @@ MAX_RETRY = 10
 
 #unit=second
 SLEEP_TIME = 60
+MAX_CHECK_TIMES = 100
+
 LOG = logging.getLogger(__name__)
 import pdb
 class HwsInstaller(object):
@@ -111,7 +113,7 @@ class HwsInstaller(object):
 
     def block_until_success(self, job_id):
         server_id = None
-        for i in range(MAX_RETRY):
+        for i in range(MAX_CHECK_TIMES):
             result = self.get_job_detail(job_id)
             status = result[RSP_STATUS]
             if status == "FAILED":
@@ -120,7 +122,7 @@ class HwsInstaller(object):
                 server_id = result['entities']['sub_jobs'][0]["entities"]["server_id"]
                 break
             else:
-                time.sleep(SLEEP_TIME * i)
+                time.sleep(SLEEP_TIME)
 
         if server_id is None:
             raise InstallCascadedFailed(current_step="create vm")
@@ -128,8 +130,19 @@ class HwsInstaller(object):
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
         raise_exception=InstallCascadedFailed(
+        current_step="get server ips"))
+    def get_server_ips(self, server_id):
+        result = self.hws_client.ecs.get_server_ips(self.project_id, server_id)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise UninstallCascadedFailed(current_step="get server ips")
+        return result[RSP_BODY]["interfaceAttachments"]["fixed_ips"]
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
         current_step="get free public ip"))
-    def get_free_public_ip(self):
+    def alloc_public_ip(self):
         result = self.hws_client.vpc.list_public_ips(self.project_id)
         status = str(result[RSP_STATUS])
         if not status.startswith(RSP_STATUS_OK):

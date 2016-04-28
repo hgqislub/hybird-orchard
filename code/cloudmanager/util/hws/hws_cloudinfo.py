@@ -9,9 +9,9 @@ import os
 import json
 import cloudmanager.region_mapping
 
-_vcloud_access_cloud_data_file = os.path.join("/home/hybrid_cloud/data/vcloud",
-                                           "vcloud_access_cloud_install.data")
-_vcloud_access_cloud_data_file_lock = threading.Lock()
+_hws_access_cloud_data_file = os.path.join("/home/hybrid_cloud/data/hws",
+                                           "hws_access_cloud_install.data")
+_hws_access_cloud_data_file_lock = threading.Lock()
 
 LOG=logging.getLogger(__name__)
 
@@ -89,10 +89,10 @@ class HwsCloudInfo(utils.CloudInfo):
 
 def _read_vcloud_access_cloud_info():
     vcloud_hybrid_cloud = {}
-    if not os.path.exists(_vcloud_access_cloud_data_file):
-        LOG.error("read %s : No such file." % _vcloud_access_cloud_data_file)
+    if not os.path.exists(_hws_access_cloud_data_file):
+        LOG.error("read %s : No such file." % _hws_access_cloud_data_file)
     else:
-        with open(_vcloud_access_cloud_data_file, 'r+') as fd:
+        with open(_hws_access_cloud_data_file, 'r+') as fd:
             try:
                 vcloud_hybrid_cloud = json.loads(fd.read())
             except:
@@ -101,12 +101,12 @@ def _read_vcloud_access_cloud_info():
 
 
 def _write_vcloud_access_cloud_info(vcloud_hybrid_clouds):
-    with open(_vcloud_access_cloud_data_file, 'w+') as fd:
+    with open(_hws_access_cloud_data_file, 'w+') as fd:
         fd.write(json.dumps(vcloud_hybrid_clouds, indent=4))
 
 
 def get_vcloud_access_cloud(cloud_id):
-    _vcloud_access_cloud_data_file_lock.acquire()
+    _hws_access_cloud_data_file_lock.acquire()
     try:
         cloud_dict = _read_vcloud_access_cloud_info()
     except Exception as e:
@@ -114,7 +114,7 @@ def get_vcloud_access_cloud(cloud_id):
         LOG.error("get vcloud access cloud info error, cloud_id: %s, error: %s"
                      % (cloud_id, e.message))
     finally:
-        _vcloud_access_cloud_data_file_lock.release()
+        _hws_access_cloud_data_file_lock.release()
 
     if cloud_id in cloud_dict.keys():
         return cloud_dict[cloud_id]
@@ -123,7 +123,7 @@ def get_vcloud_access_cloud(cloud_id):
 
 
 def delete_vcloud_access_cloud(cloud_id):
-    _vcloud_access_cloud_data_file_lock.acquire()
+    _hws_access_cloud_data_file_lock.acquire()
     try:
         cloud_dict = _read_vcloud_access_cloud_info()
         if cloud_id in cloud_dict.keys():
@@ -133,7 +133,7 @@ def delete_vcloud_access_cloud(cloud_id):
         LOG.error("delete vcloud access cloud error, cloud_id: %s, error: %s"
                      % (cloud_id, e.message))
     finally:
-        _vcloud_access_cloud_data_file_lock.release()
+        _hws_access_cloud_data_file_lock.release()
 
 
 def _get_unit_info(cloud_id, unit_key):
@@ -148,7 +148,7 @@ def _get_unit_info(cloud_id, unit_key):
 
 
 def _write_unit_info(cloud_id, unit_key, unit_value):
-    _vcloud_access_cloud_data_file_lock.acquire()
+    _hws_access_cloud_data_file_lock.acquire()
     try:
         cloud_dict = _read_vcloud_access_cloud_info()
         if cloud_id in cloud_dict.keys():
@@ -161,7 +161,7 @@ def _write_unit_info(cloud_id, unit_key, unit_value):
                      "cloud_id: %s, unit_key: %s, unit_value: %s, error: %s"
                      % (cloud_id, unit_key, unit_value, e.message))
     finally:
-        _vcloud_access_cloud_data_file_lock.release()
+        _hws_access_cloud_data_file_lock.release()
 
 def get_cascaded(cloud_id):
     return _get_unit_info(cloud_id, "cascaded")

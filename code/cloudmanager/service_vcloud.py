@@ -38,7 +38,7 @@ class CloudManager:
 
           #deploy cascaded and vpn
           self.cloud_installer.deploy_cascaded()
-          self.cloud_installer.deploy_vpn()
+          #self.cloud_installer.deploy_vpn()
 
           #initialize the cloud params
           install_info = self.cloud_installer.package_installinfo()

@@ -232,6 +232,31 @@ class ECSService(HWSService):
         uri =  "/v1/%s/cloudservers/flavors" % project_id
         return self.get(uri)
 
+    def get_server_ips(self, project_id, server_id):
+        """
+        :param project_id:
+        :param server_id:
+        :return:
+        {
+            "interfaceAttachments": [
+            {
+                "port_state": "ACTIVE",
+                "fixed_ips": [
+                    {
+                        "subnet_id": "f8a6e8f8-c2ec-497c-9f23-da9616de54ef",
+                        "ip_address": "192.168.1.3"
+                    }
+                ],
+                "net_id": "3cb9bc59-5699-4588-a4b1-b87f96708bc6",
+                "port_id": "ce531f90-199f-48c0-816c-13e38010b442",
+                "mac_addr": "fa:16:3e:4c:2c:30"
+            }
+            ]
+        }
+        """
+        uri = '/v2/%s/servers/%s/os-interface' % (project_id, server_id)
+        return self.get(uri)
+
     def delete_server(self, project_id, server_id_list, delete_public_ip, delete_volume):
         """
         {

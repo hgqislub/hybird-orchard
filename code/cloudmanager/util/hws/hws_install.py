@@ -27,6 +27,7 @@ _install_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_access_cloud_install.conf')
 _vpc_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_vpc.conf')
+
 SUBNET_GATEWAY_TAIL_IP = "1"
 VPN_TAIL_IP = "254"
 CASCADED_TAIL_IP = "253"

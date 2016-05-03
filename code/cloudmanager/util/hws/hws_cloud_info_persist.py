@@ -1,30 +1,27 @@
-_access_cloud_install_info_file = os.path.join("/home/hybrid_cloud/data/hws/",
-                             'hws_access_cloud_install.data')
+
 from conf_util import *
 class HWSCloudInfoPersist:
-    def __init__(self, cloud_id):
-        self.install_info_handler = CloudInfoHandler(_access_cloud_install_info_file, cloud_id)
+    def __init__(self, _access_cloud_install_info_file, cloud_id):
+        self.info_handler = CloudInfoHandler(_access_cloud_install_info_file, cloud_id)
 
-    def write_vpc_info(cloud_id, vpc_id ,
-                                api_subnet_cidr ,
-                                tunnel_gw ,
-                                tunnel_subnet_cidr):
+    def write_vpc_info(self, vpc_id, vpc_name, vpc_cidr):
         vpc_info = {
-            "vpc_id": vpc_id
-            "external_api_info":
-            "tunnel_bearing_info":
-
+            "id": vpc_id,
+            "name": vpc_name,
+            "cidr": vpc_cidr
         }
-    vdc_network_info = {
-                "api_gw": api_gw,
-                "api_subnet_cidr": api_subnet_cidr,
-                "tunnel_gw": tunnel_gw,
-                "tunnel_subnet_cidr": tunnel_subnet_cidr
-                }
-    _write_unit_info(cloud_id, "vdc_network", vdc_network_info)
+        self.info_handler.write_unit_info("vpc", vpc_info)
 
+    def write_subnets_info(self, external_api_subnet, tunnel_bearing_subnet, internal_base_subnet, debug_subnet):
+        subnets_info = {
+            "external_api": external_api_subnet,
+            "tunnel_bearing": tunnel_bearing_subnet,
+            "internal_base": internal_base_subnet,
+            "debug": debug_subnet
+        }
+        self.info_handler.write_unit_info("subnets", subnets_info)
 
-def write_cascaded(cloud_id,public_ip_api_reverse,
+    def write_cascaded_info(self, public_ip_api_reverse,
                                     public_ip_api_forward,
                                     public_ip_ntp_server,
                                     public_ip_ntp_client,
@@ -32,7 +29,7 @@ def write_cascaded(cloud_id,public_ip_api_reverse,
                                     cascaded_base_ip,
                                     cascaded_api_ip,
                                     cascaded_tunnel_ip):
-    cascaded_info = {"public_ip_api_reverse": public_ip_api_reverse,
+        cascaded_info = {"public_ip_api_reverse": public_ip_api_reverse,
                      "public_ip_api_forward": public_ip_api_forward,
                      "public_ip_ntp_server": public_ip_ntp_server,
                      "public_ip_ntp_client": public_ip_ntp_client,
@@ -42,18 +39,17 @@ def write_cascaded(cloud_id,public_ip_api_reverse,
                      "cascaded_tunnel_ip": cascaded_tunnel_ip
                     }
 
-    _write_unit_info(cloud_id, "cascaded", cascaded_info)
+        self.info_handler.write_unit_info("cascaded", cascaded_info)
 
 
-def write_vpn(cloud_id, public_ip_vpn,
-                        vpn_api_ip,
-                        vpn_tunnel_ip):
-    vpn_info = {"public_ip_vpn": public_ip_vpn,
-                "vpn_api_ip": vpn_api_ip,
-                "vpn_tunnel_ip": vpn_tunnel_ip}
+    def write_vpn(self, server_id, public_ip, external_api_ip, tunnel_bearing_ip):
+        vpn_info = {"server_id": server_id,
+                "public_ip": public_ip,
+                "external_api_ip": external_api_ip,
+                "tunnel_bearing_ip": tunnel_bearing_ip}
 
-    _write_unit_info(cloud_id, "vpn", vpn_info)
+        self.info_handler.write_unit_info("vpn", vpn_info)
 
 
-def write_ext_net_eip(cloud_id, ext_net_eips):
-    _write_unit_info(cloud_id, "ext_net_eips", ext_net_eips)
+    def write_ext_net_eip(self, ext_net_eips):
+        self.info_handler.write_unit_info("ext_net_eips", ext_net_eips)

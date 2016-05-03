@@ -34,12 +34,15 @@ class VcloudCloudInfo(utils.CloudInfo):
         self.cloud_proxy = None
         self.driver_type = None
         self.access = None
+        self.localmode = True
+        self.vcloud_publicip = None
         self.with_ceph = None
 
+
     def initialize(self, cloud_params, install_info, proxy_info, installer):
-        self.cloud_id = "@".join([cloud_params['vcloud_url'],cloud_params['vcloud_org'],
-                                  cloud_params['vcloud_vdc'], cloud_params['region_name'],
-                                  cloud_params['azname']])
+        self.cloud_id = "@".join([cloud_params['vcloud_org'], cloud_params['vcloud_vdc'],
+                             cloud_params['region_name'], cloud_params['azname']])    #get cloud id
+
 
         self.cascaded_domain = installer._distribute_cloud_domain(
                 region_name=cloud_params['region_name'], azname=cloud_params['azname'], az_tag="--vcloud")
@@ -59,11 +62,13 @@ class VcloudCloudInfo(utils.CloudInfo):
         self.cloud_proxy = proxy_info
         self.driver_type = cloud_params['driver_type']
         self.access = cloud_params['access']
+        self.localmode = cloud_params['localmode']
+        self.vcloud_publicip = cloud_params['vcloud_publicip']
 
     def get_exist_cloud(self, cloud_id, vcloud_url, vcloud_org, vcloud_vdc, vcloud_edgegw, username, passwd,
                  region_name, availabilityzone, azname,
                  cascaded_domain, cascaded_eip, vpn_eip, cloud_proxy=None,
-                 driver_type="agentleass", access=True, with_ceph=True):
+                 driver_type="agentleass", access=True, localmode=True,vcloud_publicip=None,with_ceph=True):
         self.cloud_id = cloud_id
         self.vcloud_url = vcloud_url
         self.vcloud_org = vcloud_org
@@ -80,6 +85,8 @@ class VcloudCloudInfo(utils.CloudInfo):
         self.cloud_proxy = cloud_proxy
         self.driver_type = driver_type
         self.access = access
+        self.localmode = localmode
+        self.vcloud_publicip = vcloud_publicip
         self.with_ceph = with_ceph
 
     def get_vpn_conn_name(self):
@@ -175,9 +182,9 @@ def get_ext_net_eips(cloud_id):
     return _get_unit_info(cloud_id, "ext_net_eips")
 
 #TODO(lrx):modify vpc to vcloud network
-def write_vdc_network(cloud_id, api_gw ,
-                                api_subnet_cidr ,
-                                tunnel_gw ,
+def write_vdc_network(cloud_id, api_gw,
+                                api_subnet_cidr,
+                                tunnel_gw,
                                 tunnel_subnet_cidr):
     vdc_network_info = {
                 "api_gw": api_gw,
@@ -211,10 +218,12 @@ def write_cascaded(cloud_id,public_ip_api_reverse,
 
 def write_vpn(cloud_id, public_ip_vpn,
                         vpn_api_ip,
-                        vpn_tunnel_ip):
+                        vpn_tunnel_ip,
+                        vcloud_publicip):
     vpn_info = {"public_ip_vpn": public_ip_vpn,
                 "vpn_api_ip": vpn_api_ip,
-                "vpn_tunnel_ip": vpn_tunnel_ip}
+                "vpn_tunnel_ip": vpn_tunnel_ip,
+                "ext_net_publicip":vcloud_publicip}
 
     _write_unit_info(cloud_id, "vpn", vpn_info)
 

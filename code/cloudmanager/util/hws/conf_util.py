@@ -48,6 +48,20 @@ class CloudInfoHandler:
         finally:
             self._file_lock.release()
 
+    def write_cloud_info(self, data):
+        self._file_lock.acquire()
+        try:
+            cloud_dict = read_conf(self.file_path)
+            cloud_dict[self.cloud_id] = data
+            write_conf(self.file_path, cloud_dict)
+        except Exception as e:
+            LOG.error("write cloud info error, "
+                         "cloud_id: %s,  error: %s"
+                         % (self.cloud_id, e.message))
+            raise e
+        finally:
+            self._file_lock.release()
+
     def get_all_unit_info(self):
         self._file_lock.acquire()
         try:

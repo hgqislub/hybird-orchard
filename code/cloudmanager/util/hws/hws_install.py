@@ -28,6 +28,9 @@ _vpc_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_vpc.conf')
 _access_cloud_install_info_file = os.path.join("/home/hybrid_cloud/data/hws/",
                              'hws_access_cloud_install.data')
+_access_cloud_info_file = os.path.join("/home/hybrid_cloud/data/hws/",
+                             'hws_access_cloud.data')
+
 SUBNET_GATEWAY_TAIL_IP = "1"
 VPN_TAIL_IP = "254"
 CASCADED_TAIL_IP = "253"
@@ -106,41 +109,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
-    def _read_vcloud_access_cloud(self):
-        cloud_info = data_handler.get_vcloud_access_cloud(self.cloud_id)
-        if not cloud_info:
-            return
-
-        if "vdc_network" in cloud_info.keys():
-            vdc_network_info = cloud_info["vdc_network"]
-
-            self.api_gw=vdc_network_info["api_gw"],
-            self.api_subnet_cidr=vdc_network_info["api_subnet_cidr"]
-            self.tunnel_gw=vdc_network_info["tunnel_gw"]
-            self.tunnel_subnet_cidr=vdc_network_info["tunnel_subnet_cidr"]
-
-        if "cascaded" in cloud_info.keys():
-            cascaded_info = cloud_info["cascaded"]
-            self.public_ip_api_reverse = cascaded_info["public_ip_api_reverse"]
-            self.public_ip_api_forward = cascaded_info["public_ip_api_forward"]
-            self.public_ip_ntp_server = cascaded_info["public_ip_ntp_server"]
-            self.public_ip_ntp_client = cascaded_info["public_ip_ntp_client"]
-            self.public_ip_cps_web = cascaded_info["public_ip_cps_web"]
-
-            self.cascaded_base_ip= cascaded_info["cascaded_base_ip"]
-            self.cascaded_api_ip= cascaded_info["cascaded_api_ip"]
-            self.cascaded_tunnel_ip= cascaded_info["cascaded_tunnel_ip"]
-
-        if "vpn" in cloud_info.keys():
-            vpn_info = cloud_info["vpn"]
-            self.public_ip_vpn = vpn_info["public_ip_vpn"]
-            self.vpn_api_ip =  vpn_info["vpn_api_ip"]
-            self.vpn_tunnel_ip =  vpn_info["vpn_tunnel_ip"]
-
-
-        if "ext_net_eips" in cloud_info.keys():
-            self.ext_net_eips = cloud_info["ext_net_eips"]
-
     def _create_vpc(self):
         name = self.vpc_info["name"]
         cidr = self.vpc_info["cidr"]
@@ -153,7 +121,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
     def _create_subnet(self):
         az = self.cloud_info["availability_zone"]
         self.external_api_cidr = self.external_api_info["cidr"]
-        external_api_gateway = self._alloc_gateway_ip(self.external_api_cidr)
+        self.external_api_gateway = self._alloc_gateway_ip(self.external_api_cidr)
         self.tunnel_bearing_cidr = self.tunnel_bearing_info["cidr"]
         tunnel_bearing_gateway = self._alloc_gateway_ip(self.tunnel_bearing_cidr)
         self.internal_base_cidr = self.internal_base_info["cidr"]
@@ -225,14 +193,13 @@ class HwsCascadedInstaller(utils.CloudUtil):
 
     def cloud_preinstall(self):
         pdb.set_trace()
-        self.install_network()
-        self.install_vpn()
+        self._install_network()
 
-    def install_network(self):
+    def _install_network(self):
         self._create_vpc()
         self._create_subnet()
 
-    def uninstall_network(self):
+    def _uninstall_network(self):
         self._delete_subnet()
         self._delete_vpc()
 
@@ -242,8 +209,12 @@ class HwsCascadedInstaller(utils.CloudUtil):
     def cloud_postuninstall(self):
         pass
 
-    def install_cascaded(self):
-         self._install_cascaded()
+    def cloud_install(self):
+        self._cloud_install()
+
+    def _cloud_install(self):
+        self._install_vpn()
+        self._install_cascaded()
 
     def _install_cascaded(self):
         self.cascaded_internal_base_ip = self._alloc_cascaded_ip(self.internal_base_cidr)
@@ -276,9 +247,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
         servers = [self.cascaded_server_id]
         self.installer.delete_vm(servers, True, True)
 
-    def install_vpn(self):
-        self._install_vpn()
-
     def _install_vpn(self):
         self._alloc_public_ip()
         publicip = dict()
@@ -291,7 +259,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
                             {"subnet_id": self.tunnel_bearing_id,
                              "ip_address": self.vpn_tunnel_bearing_ip}]
         self.vpn_server_job_id = self.installer.create_vm( self.vpn_image,
-                                  self.vpn_flavor, "hgq_hws_vpn",
+                                  self.vpn_flavor, "hgq_hws_cascaded_vpn",
                                   self.vpc_id, nics,
                                   ROOT_VOLUME_TYPE,
                                   self.availability_zone,
@@ -312,34 +280,71 @@ class HwsCascadedInstaller(utils.CloudUtil):
     def package_installinfo(self):
         return self.package_vcloud_access_cloud_info()
 
-    def package_vcloud_access_cloud_info(self):
-        #TODO(lrx):modify the info params
-        info = {"vdc_network":
-                    {"api_gw": self.api_gw,
-                    "api_subnet_cidr": self.api_subnet_cidr,
-                    "tunnel_gw": self.tunnel_gw,
-                    "tunnel_subnet_cidr": self.tunnel_subnet_cidr
-                     },
-                "cascaded":
-                    {"public_ip_api_reverse": self.public_ip_api_reverse,
-                     "public_ip_api_forward": self.public_ip_api_forward,
-                     "public_ip_ntp_server": self.public_ip_ntp_server,
-                     "public_ip_ntp_client": self.public_ip_ntp_client,
-                     "public_ip_cps_web": self.public_ip_cps_web,
-                     "base_ip": self.cascaded_base_ip,
-                     "api_ip": self.cascaded_api_ip,
-                     "tunnel_ip": self.cascaded_tunnel_ip},
-                "vpn":
-                    {
-                     "public_ip_vpn":self.public_ip_vpn,
-                     "vpn_api_ip":self.vpn_api_ip,
-                     "vpn_tunnel_ip":self.vpn_tunnel_ip},
+    def _distribute_cloud_domain(self, region_name, azname, az_tag):
+        domain_list = self.cascading_domain.split(".")
+        domainpostfix = ".".join([domain_list[2], domain_list[3]])
+        l_region_name = region_name.lower()
+        cloud_cascaded_domain = ".".join(
+                [azname, l_region_name + az_tag, domainpostfix])
+        return cloud_cascaded_domain
 
-                "ext_net_eips": self.ext_net_eips.keys()}
+    def package_hws_access_cloud_info(self):
+        cascaded_vpn_info = {
+            "public_ip": self.vpn_public_ip,
+            "external_api_ip": self.vpn_external_api_ip,
+            "tunnel_bearing_ip": self.vpn_tunnel_bearing_ip
+        }
+
+        cascaded_info = {
+            "external_api_ip": self.cascaded_external_api_ip,
+            "tunnel_bearing_ip": self.cascaded_tunnel_bearing_ip,
+            "domain": self._distribute_cloud_domain(
+                    self.cloud_info['azname'], self.cloud_info['region'], "hws")
+        }
+
+        cascaded_subnets_info = {
+            "external_api": self.external_api_cidr,
+            "external_api_gateway_ip": self.external_api_gateway,
+            "tunnel_bearing": self.tunnel_bearing_cidr,
+            "internal_base": self.internal_base_cidr,
+            "debug": self.debug_cidr
+        }
+
+        cascading_info = {
+            "external_api_ip": self.cascading_api_ip,
+            "domain": self.cascading_domain
+
+        }
+
+        cascading_vpn_info = {
+            "public_ip": self.local_vpn_public_gw,
+            "external_api_ip": self.local_vpn_api_ip,
+            "tunnel_bearing_ip": self.local_vpn_tunnel_ip
+        }
+
+        cascading_subnets_info = {
+            "external_api": self.local_api_subnet,
+            "tunnel_bearing": self.local_tunnel_subnet
+        }
+
+        vpn_conn_name = {
+            "api_conn_name": self.cloud_id + '-api',
+            "tunnel_conn_name": self.cloud_id + '-tunnel'
+        }
+
+        info = {"cascaded_vpn_info":cascaded_vpn_info,
+                "cascading_vpn_info":cascading_vpn_info,
+                "cascaded_info": cascaded_info,
+                "cascading_info":cascading_info,
+                "cascaded_subnets_info": cascaded_subnets_info,
+                "cascading_subnets_info": cascading_subnets_info,
+                "vpn_conn_name": vpn_conn_name
+                }
+        self.data_handler.write_cloud_info(info)
         return info
 
-    def get_vcloud_access_cloud_install_info(self,installer):
-                return installer.package_vcloud_access_cloud_info()
+    def get_vcloud_access_cloud_install_info(self):
+        return self.package_vcloud_access_cloud_info()
 
 
 

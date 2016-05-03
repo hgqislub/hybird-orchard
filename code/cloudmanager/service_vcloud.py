@@ -36,21 +36,14 @@ class CloudManager:
           #preinstall
           self.cloud_installer.cloud_preinstall()
 
-          #deploy cascaded and vpn
-          self.cloud_installer.deploy_cascaded()
-          #self.cloud_installer.deploy_vpn()
+          self.cloud_installer.cloud_install()    #deploy cascaded and vpn
 
           #initialize the cloud params
           install_info = self.cloud_installer.package_installinfo()
           self.cloud_installer.cloudinfo.initialize(self.cloud_params, install_info, proxy_info, self.cloud_installer.installer)
           self.cloud_installer.configer.initialize(self.cloud_params, install_info, proxy_info, self.cloud_installer.cloudinfo, self.cloud_installer.installer)
 
-          # if(self.cloud_params['service'] == ?)
-          #   serviceinstaller.deploy_service('v2v')
-          #   serviceinstaller.deploy_service('ceph')
-
-        #postinstall
-        self.cloud_installer.cloud_postinstall(self.cloud_installer.cloudinfo)
+        self.cloud_installer.cloud_postinstall(self.cloud_installer.cloudinfo)    #postinstall
 
         #register cloud information
         self.cloud_installer.register_cloud()
@@ -62,19 +55,16 @@ class CloudManager:
                                   self.cloud_params['vcloud_vdc'], self.cloud_params['region_name'],
                                   self.cloud_params['azname']])
 
-        #initialize param
-        self.cloud_installer = SubCloud(self.cloud_params)
-        install_info = self.cloud_installer.installer.get_vcloud_access_cloud_install_info(installer=self.cloud_installer.installer)
-        self.cloud_installer.cloudinfo = VcloudCloudDataHandler().get_vcloud_cloud(cloud_id=cloud_id)
-        self.cloud_installer.configer.initialize(self.cloud_params, install_info, self.cloud_installer.cloudinfo.cloud_proxy, self.cloud_installer.cloudinfo, self.cloud_installer.installer)
+        cloudinstaller = SubCloud(self.cloud_params)    #initialize param
+        install_info = cloudinstaller.installer.get_vcloud_access_cloud_install_info(installer=cloudinstaller.installer)
+        cloudinstaller.cloudinfo = cloudinstaller.installer.get_vcloud_cloud()
+        cloudinstaller.configer.initialize(self.cloud_params, install_info, cloudinstaller.cloudinfo.cloud_proxy, cloudinstaller.cloudinfo, cloudinstaller.installer)
 
-        #uninstall
-        self.cloud_installer.delete_cascaded()
-        self.cloud_installer.delete_vpn()
-        self.cloud_installer.cloud_postuninstall()
+        cloudinstaller.cloud_uninstall()    #uninstall
 
-        #unregister cloud information
-        self.cloud_installer.unregister_cloud()
+        cloudinstaller.cloud_postuninstall()    #postuninstall
+
+        cloudinstaller.unregister_cloud()   #unregister cloud information
 
     def list_cloud(self):
         pass
@@ -82,6 +72,54 @@ class CloudManager:
     def update_cloud(self):
         pass
 
+    def add_service(self):
+        cloud_id = "@".join([self.cloud_params['vcloud_org'], self.cloud_params['vcloud_vdc'],
+                             self.cloud_params['region_name'], self.cloud_params['azname']])    #get cloud id
+
+
+        serviceinstaller = Service(self.cloud_params)    #initialize param
+        install_info = serviceinstaller.installer.get_vcloud_access_cloud_install_info(installer=serviceinstaller.installer)
+        serviceinstaller.cloudinfo = serviceinstaller.installer.get_vcloud_cloud()
+        serviceinstaller.configer.initialize(self.cloud_params, install_info, serviceinstaller.cloudinfo.cloud_proxy, cloudinstaller.cloudinfo, cloudinstaller.installer)
+
+        serviceinstaller.service_preinstall()
+
+        serviceinstaller.service_install()
+
+        serviceinstaller.service_postuninstall()
+
+        serviceinstaller.register_cloud()
+
+    def delete_service(self):
+        pass
+
+    def add_vpn_only(self):
+        cloudinstaller = SubCloud(self.cloud_params)
+
+        cloudinstaller.cloud_preinstall()    #preinstall
+
+        cloudinstaller.deploy_vpn()    #deploy cascaded and vpn
+
+        install_info = cloudinstaller.package_installinfo()    #initialize the cloud params
+        cloudinstaller.cloudinfo.initialize(self.cloud_params, install_info, None, cloudinstaller.installer)
+        cloudinstaller.configer.initialize(self.cloud_params, install_info, None, cloudinstaller.cloudinfo, cloudinstaller.installer)
+
+        cloudinstaller.cloud_postinstall(cloudinstaller.cloudinfo)    #postinstall
+
+        cloudinstaller.config_vpn_only()
+
+    def delete_vpn_only(self):
+        cloud_id = "@".join([self.cloud_params['vcloud_org'], self.cloud_params['vcloud_vdc'],
+                             self.cloud_params['region_name'], self.cloud_params['azname']])    #get cloud id
+
+        cloudinstaller = SubCloud(self.cloud_params)    #initialize param
+        install_info = cloudinstaller.installer.get_vcloud_access_cloud_install_info(installer=cloudinstaller.installer)
+        cloudinstaller.cloudinfo = cloudinstaller.installer.get_vcloud_cloud()
+        cloudinstaller.configer.initialize(self.cloud_params, install_info, None, cloudinstaller.cloudinfo, cloudinstaller.installer)
+
+        cloudinstaller.delete_vpn()    #uninstall
+
+        cloudinstaller.cloud_postuninstall()    #postuninstall
 
 class SubCloud(object):
     def __init__(self, cloud_params):
@@ -121,24 +159,27 @@ class SubCloud(object):
     def delete_proxy(self):
         pass
 
-    def deploy_cascaded(self):
-        self.installer.install_cascaded()
-
-    def delete_cascaded(self):
-        self.installer.uninstall_cascaded()
-
     def deploy_vpn(self):
         self.installer.install_vpn()
 
     def delete_vpn(self):
         self.installer.uninstall_vpn()
 
+    def cloud_install(self):
+        self.installer.cloud_install()
+
+    def cloud_uninstall(self):
+        self.installer.cloud_uninstall()
+
+    def config_vpn_only(self):
+        self.configer.config_vpn_only()
+
     def register_cloud(self):
         self.configer.config_vpn()
+        self.configer.config_route()
         self.configer.config_cascading()
         self.configer.config_cascaded()
         self.configer.config_proxy()
-        self.configer.config_route()
         self.configer.config_patch()
         self.configer.config_storge()
         #self.configer.config_extnet()
@@ -147,18 +188,32 @@ class SubCloud(object):
         self.configer.remove_existed_cloud()
 
 
-class AddServie(object):
-    def __init__(self):
-        pass
+class Service(object):
+    def __init__(self,cloud_params):
+        self.cloud_type = cloud_params['cloud_type']
+        self.installer = None
+        self.configer = None
+        self.cloudinfo = None
+        self.init_installer(cloud_params)
 
-    def deploy_service(self):
-        pass
+    def init_installer(self,cloud_params):
+        if(self.cloud_type == 'VCLOUD'):
+            self.installer =  vcloudinstaller.VcloudCloudInstaller(cloud_params=cloud_params)
+            self.configer = vcloudconfiger.VcloudCloudConfig()
+            self.cloudinfo = vcloudcloudinfo.VcloudCloudInfo()
 
-    def delete_service(self):
-        pass
+    def service_preinstall(self):
+        self.installer.cloud_preinstall()
 
-    def config_service(self):
-        pass
+    def service_install(self):
+        self.installer.service_install()
+
+    def service_postuninstall(self):
+        self.installer.service_postuninstall()
+
+    def register_cloud(self):
+        self.configer.config_service()
+
 
 
 

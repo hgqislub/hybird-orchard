@@ -21,7 +21,7 @@ import cloudmanager.exception as exception
 
 LOG = logging.getLogger(__name__)
 
-class VcloudCloudConfig(utils.ConfigUtil):
+class HwsConfig(utils.ConfigUtil):
     def __init__(self):
         self.local_vpn_thread = None
         self.cloud_vpn_thread = None
@@ -286,9 +286,9 @@ class VcloudCloudConfig(utils.ConfigUtil):
                            "proxy_num": proxy_info["proxy_num"],
                            "proxy_host_name": proxy_info["id"],
                            "cascaded_domain": cascaded_domain,
-                           "local_tunnel_subnet": self.installer.local_tunnel_subnet,
-                           "cloud_vpn_tunnel_ip": install_info["vpn"]["vpn_tunnel_ip"],
-                           "cascading_domain": self.installer.cascading_domain})
+                           "local_tunnel_subnet": install_info['cascading_subnets_info']['tunnel_bearing'],
+                           "cloud_vpn_tunnel_ip": install_info["cascaded_vpn_info"]["tunnel_bearing_ip"],
+                           "cascading_domain": install_info["cascading_info"]["domain"]})
                 return True
             except Exception as e:
                 LOG.error("config patch tool error, error: %s"

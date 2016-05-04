@@ -42,7 +42,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._read_env()
         self._read_vpc_conf()
         self._read_install_conf()
-        self.data_handler = HWSCloudInfoPersist(_access_cloud_install_info_file, self.cloud_id)
+        self.data_handler = HwsCloudInfoPersist(_access_cloud_install_info_file, self.cloud_id)
 
 
     def _init_params(self, cloud_params):
@@ -340,7 +340,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
                 "cascading_subnets_info": cascading_subnets_info,
                 "vpn_conn_name": vpn_conn_name
                 }
-        self.data_handler.write_cloud_info(info)
+        data_handler = HwsCloudInfoPersist(_access_cloud_info_file, self.cloud_id)
+        data_handler.write_cloud_info(info)
         return info
 
     def get_vcloud_access_cloud_install_info(self):

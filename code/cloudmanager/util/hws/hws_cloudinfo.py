@@ -5,7 +5,7 @@ sys.path.append('..')
 from heat.openstack.common import log as logging
 import threading
 import os
-
+import cloudinfo_util as utils
 
 _hws_access_cloud_data_file = os.path.join("/home/hybrid_cloud/data/hws",
                                            "hws_access_cloud_install.data")

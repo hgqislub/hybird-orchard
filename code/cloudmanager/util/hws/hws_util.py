@@ -152,7 +152,7 @@ class HwsInstaller(object):
         public_ips = result[RSP_BODY]["publicips"]
 
         for ip in public_ips:
-            if ip["port_id"] is None:
+            if ip["status"] == "DOWN":
                 free_ip = ip
                 return free_ip
 
@@ -179,4 +179,34 @@ class HwsInstaller(object):
         status = str(result[RSP_STATUS])
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
-            raise InstallCascadedFailed(current_step="release public ip")
+            raise UninstallCascadedFailed(current_step="release public ip")
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
+        current_step="get security group"))
+    def get_security_group(self, vpc_id):
+        opts = dict()
+        opts["vpc_id"] = vpc_id
+        result = self.hws_client.vpc.list_security_groups(self.project_id,opts = opts)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise InstallCascadedFailed(current_step="get security group")
+        security_groups = result[RSP_BODY]["security_groups"]
+
+        for security_group in security_groups:
+            if security_group["name"] == "default":
+                return security_group["id"]
+
+        return security_groups[0]["id"]
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
+        current_step="create security group rule"))
+    def create_security_group_rule(self, security_group_id, direction, ethertype):
+        result = self.hws_client.vpc.create_security_group_rule(
+                self.project_id, security_group_id, direction, ethertype)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise InstallCascadedFailed(current_step="create security group rule")

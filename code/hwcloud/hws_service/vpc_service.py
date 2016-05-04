@@ -310,3 +310,114 @@ class VPCService(HWSService):
         """
         uri = "/v1/%s/publicips/%s" % (project_id, public_ip_id)
         return self.delete(uri)
+
+    def list_security_groups(self, project_id, opts=None):
+        """
+        :param project_id: string
+        :param opts: dict
+        :return: dict
+        {
+            "security_groups": [
+                {
+                    "id": "16b6e77a-08fa-42c7-aa8b-106c048884e6",
+                    "name": "qq",
+                    "vpc_id": "3ec3b33f-ac1c-4630-ad1c-7dba1ed79d85",
+                    "security_group_rules": [
+                        {
+                            "direction": "egress",
+                            "ethertype": "IPv4",
+                            "id": "369e6499-b2cb-4126-972a-97e589692c62",
+                            "security_group_id": "16b6e77a-08fa-42c7-aa8b-106c048884e6"
+                        },
+                        {
+                            "direction": "ingress",
+                            "ethertype": "IPv4",
+                            "id": "0222556c-6556-40ad-8aac-9fd5d3c06171",
+                            "remote_group_id": "16b6e77a-08fa-42c7-aa8b-106c048884e6",
+                            "security_group_id": "16b6e77a-08fa-42c7-aa8b-106c048884e6"
+                        }
+                    ]
+                },
+                {
+                    "id": "9c0f56be-a9ac-438c-8c57-fce62de19419",
+                    "name": "default",
+                    "vpc_id": "13551d6b-755d-4757-b956-536f674975c0",
+                    "security_group_rules": [
+                        {
+                            "direction": "egress",
+                            "ethertype": "IPv4",
+                            "id": "95479e0a-e312-4844-b53d-a5e4541b783f",
+                            "security_group_id": "9c0f56be-a9ac-438c-8c57-fce62de19419"
+                        },
+                        {
+                            "direction": "ingress",
+                            "ethertype": "IPv4",
+                            "id": "0c4a2336-b036-4fa2-bc3c-1a291ed4c431",
+                            "remote_group_id": "9c0f56be-a9ac-438c-8c57-fce62de19419",
+                            "security_group_id": "9c0f56be-a9ac-438c-8c57-fce62de19419"
+                        }
+                    ]
+                }
+            ]
+        }
+        """
+
+        uri = "/v1/%s/security-groups" % project_id
+        if opts:
+            str_opts = self.convertDictOptsToString(opts)
+            uri = '?'.join([uri, str_opts])
+        return self.get(uri)
+
+    def create_security_group_rule(self, project_id, security_group_id, direction,
+                                ethertype, protocol=None, port_range_min=None,
+                                port_range_max = None, remote_ip_prefix = None,
+                                remote_group_id = None):
+        """
+
+        :param project_id:
+        :param security_group_id:
+        :param direction:
+        :param ethertype:
+        :param protocol:
+        :param port_range_min:
+        :param port_range_max:
+        :param remote_ip_prefix:
+        :param remote_group_id:
+        :return:
+        {
+            "security_group_rule":{
+                "direction":"ingress",
+                "ethertype":"IPv4",
+                "id":"2bc0accf-312e-429a-956e-e4407625eb62",
+                "port_range_max":80,
+                "port_range_min":80,
+                "protocol":"tcp",
+                "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                "remote_ip_prefix":null,
+                "security_group_id":"a7734e61-b545-452d-a3cd-0189cbd9747a",
+                "tenant_id":"e4f50856753b4dc6afee5fa6b9b6c550"
+            }
+        }
+        """
+        uri = "/v1/%s/security-group-rules" % project_id
+
+        request_body_dict = dict()
+        security_group_rule = dict()
+        security_group_rule["security_group_id"] = security_group_id
+        security_group_rule["direction"] = direction
+        security_group_rule["ethertype"] = ethertype
+        if protocol:
+            security_group_rule["protocol"] = protocol
+        if port_range_min:
+            security_group_rule["port_range_min"] = port_range_min
+        if port_range_max:
+            security_group_rule["port_range_max"] = port_range_max
+        if remote_ip_prefix:
+            security_group_rule["remote_ip_prefix"] = remote_ip_prefix
+        if remote_group_id:
+            security_group_rule["remote_group_id"] = remote_group_id
+
+        request_body_dict["security_group_rule"] = security_group_rule
+        request_body_string = json.dumps(request_body_dict)
+
+        return self.post(uri, request_body_string)

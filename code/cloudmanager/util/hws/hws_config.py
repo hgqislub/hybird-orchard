@@ -9,7 +9,6 @@ import config_util as utils
 from cloudmanager.vpn_configer import VpnConfiger
 from cloudmanager.vpn import VPN
 import cloudmanager.constant as constant
-from vcloudcloudpersist import VcloudCloudDataHandler
 import threading
 import time
 import cloudmanager.proxy_manager
@@ -41,51 +40,59 @@ class HwsConfig(utils.ConfigUtil):
         self.proxy_info = proxy_info
         self.installer = installer
         self.cloudinfo = cloudinfo
-        self.vpn_conn_name = cloudinfo.get_vpn_conn_name()
+        self.vpn_conn_name = install_info["vpn_conn_name"]
 
     def config_vpn_only(self):
         LOG.info("config cloud vpn only")
-        cloud_vpn_cf = VpnConfiger(
-                    host_ip=self.install_info["vpn"]["public_ip_vpn"],
-                    user=constant.VpnConstant.VCLOUD_VPN_ROOT,
-                    password=constant.VpnConstant.VCLOUD_VPN_ROOT_PWD)
+        pass
 
-        cloud_vpn_cf.register_add_conns(
-                    tunnel_name=self.vpn_conn_name["api_conn_name"],
-                    left_public_ip=self.install_info["vpn"]["ext_net_publicip"],
-                    left_subnet=self.install_info["vdc_network"]["api_subnet_cidr"],
-                    right_public_ip=self.installer.local_vpn_public_gw,
-                    right_subnet=self.installer.local_api_subnet)
-
-        cloud_vpn_cf.register_add_conns(
-                    tunnel_name=self.vpn_conn_name["tunnel_conn_name"],
-                    left_public_ip=self.install_info["vpn"]["ext_net_publicip"],
-                    left_subnet=self.install_info["vdc_network"]["tunnel_subnet_cidr"],
-                    right_public_ip=self.installer.local_vpn_public_gw,
-                    right_subnet=self.installer.local_tunnel_subnet)
-        cloud_vpn_cf.do_config()
-
-    def config_vpn(self):
+    def _config_cascading_vpn(self):
         LOG.info("config local vpn")
         local_vpn_cf = VpnConfiger(
-                host_ip=self.install_info['cascaded_vpn_info']['external_api_ip'],
+                host_ip=self.install_info['cascading_vpn_info']['external_api_ip'],
                 user=constant.VpnConstant.VPN_ROOT,
                 password=constant.VpnConstant.VPN_ROOT_PWD)
 
         local_vpn_cf.register_add_conns(
                 tunnel_name=self.vpn_conn_name["api_conn_name"],
-                left_public_ip=self.installer.local_vpn_public_gw,
-                left_subnet=self.installer.local_api_subnet,
-                right_public_ip=self.install_info["vpn"]["ext_net_publicip"],
-                right_subnet=self.install_info["vdc_network"]["api_subnet_cidr"])
+                left_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
+                left_subnet=self.install_info['cascading_subnets_info']['external_api'],
+                right_public_ip=self.install_info["cascaded_vpn_info"]["public_ip"],
+                right_subnet=self.install_info["cascaded_subnets_info"]["external_api"])
 
         local_vpn_cf.register_add_conns(
                 tunnel_name=self.vpn_conn_name["tunnel_conn_name"],
-                left_public_ip=self.installer.local_vpn_public_gw,
-                left_subnet=self.installer.local_tunnel_subnet,
-                right_public_ip=self.install_info["vpn"]["ext_net_publicip"],
-                right_subnet=self.install_info["vdc_network"]["tunnel_subnet_cidr"])
+                left_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
+                left_subnet=self.install_info['cascading_subnets_info']['tunnel_bearing'],
+                right_public_ip=self.install_info['cascaded_vpn_info']['public_ip'],
+                right_subnet=self.install_info['cascaded_subnets_info']['tunnel_bearing'])
         local_vpn_cf.do_config()
+
+    def _config_cascaded_vpn(self):
+        LOG.info("config vcloud vpn thread")
+        cloud_vpn_cf = VpnConfiger(
+                host_ip=self.install_info["cascaded_vpn_info"]["public_ip"],
+                user=constant.VpnConstant.VCLOUD_VPN_ROOT,
+                password=constant.VpnConstant.VCLOUD_VPN_ROOT_PWD)
+
+        cloud_vpn_cf.register_add_conns(
+                tunnel_name=self.vpn_conn_name["api_conn_name"],
+                left_public_ip=self.install_info['cascaded_vpn_info']['public_ip'],
+                left_subnet=self.install_info["cascaded_subnets_info"]["external_api"],
+                right_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
+                right_subnet=self.install_info['cascading_subnets_info']['external_api'])
+
+        cloud_vpn_cf.register_add_conns(
+                tunnel_name=self.vpn_conn_name["tunnel_conn_name"],
+                left_public_ip=self.install_info['cascaded_vpn_info']['public_ip'],
+                left_subnet=self.install_info['cascaded_subnets_info']['tunnel_bearing'],
+                right_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
+                right_subnet=self.install_info['cascading_subnets_info']['tunnel_bearing'])
+        cloud_vpn_cf.do_config()
+
+    def config_vpn(self):
+        #self._config_cascading_vpn()
+        self._config_cascaded_vpn()
 
     def config_route(self):
          LOG.info("add route to cascading ...")

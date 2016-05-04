@@ -14,7 +14,7 @@ import threading
 import time
 import cloudmanager.proxy_manager
 from cloudmanager.cascading_configer import CascadingConfiger
-from hws_cascaded_configer import CascadedConfiger
+
 from cloudmanager.commonutils import *
 import cloudmanager.exception as exception
 

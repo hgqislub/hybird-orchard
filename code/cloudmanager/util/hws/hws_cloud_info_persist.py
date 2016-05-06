@@ -21,8 +21,9 @@ class HwsCloudInfoPersist:
         }
         self.info_handler.write_unit_info("subnets", subnets_info)
 
-    def write_cascaded_info(self, server_id, external_api_ip,tunnel_bearing_ip):
+    def write_cascaded_info(self, server_id, public_ip, external_api_ip,tunnel_bearing_ip):
         cascaded_info = {"server_id": server_id,
+                         "public_ip": public_ip,
                      "external_api_ip": external_api_ip,
                      "tunnel_bearing_ip": tunnel_bearing_ip
                     }
@@ -38,9 +39,6 @@ class HwsCloudInfoPersist:
 
         self.info_handler.write_unit_info("vpn", vpn_info)
 
-
-    def write_ext_net_eip(self, ext_net_eips):
-        self.info_handler.write_unit_info("ext_net_eips", ext_net_eips)
 
     def write_cloud_info(self, data):
         self.info_handler.write_cloud_info(data)

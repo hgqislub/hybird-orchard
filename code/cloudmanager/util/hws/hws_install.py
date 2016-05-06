@@ -33,7 +33,7 @@ _access_cloud_info_file = os.path.join("/home/hybrid_cloud/data/hws/",
 
 SUBNET_GATEWAY_TAIL_IP = "1"
 VPN_TAIL_IP = "254"
-CASCADED_TAIL_IP = "253"
+CASCADED_TAIL_IP = "4"
 ROOT_VOLUME_TYPE = 'SATA'
 
 class HwsCascadedInstaller(utils.CloudUtil):
@@ -113,8 +113,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
         name = self.vpc_info["name"]
         cidr = self.vpc_info["cidr"]
         #self.vpc_id = self.installer.create_vpc(name, cidr)
-        self.vpc_id = "b0cfc023-9c83-4f3a-a91b-16f04342a565"
-        pdb.set_trace()
+        self.vpc_id = "c708095b-cc66-42c7-a9cb-9268d42a6aaa"
+
         self.security_group_id = self.installer.get_security_group(self.vpc_id)
         """
         self.installer.create_security_group_rule(
@@ -150,10 +150,10 @@ class HwsCascadedInstaller(utils.CloudUtil):
                               self.debug_cidr, az, debug_gateway,
                               self.vpc_id)
         """
-        self.external_api_id = "92323bf9-984b-4b7c-a490-80dada3c3e4a"
-        self.tunnel_bearing_id = "cb967269-3ce1-4c1a-b64b-c879e8c54247"
-        self.internal_base_id = "11bb08be-b9ab-4848-b59e-f45f797df6cf"
-        self.debug_id = "7d5e1ded-3ead-4113-a8a0-b98d42dc840a"
+        self.external_api_id = "5fd5a726-5563-4541-8504-2c97fb14275b"
+        self.tunnel_bearing_id = "8237069f-3715-455f-9388-94848fc1cb1a"
+        self.internal_base_id = "d0fac5ac-4c0e-457c-9dad-2f889f5f3788"
+        self.debug_id = "e31cce42-c216-4988-9643-ef51436f86f3"
 
         external_api_info = {
             "id": self.external_api_id,
@@ -192,9 +192,9 @@ class HwsCascadedInstaller(utils.CloudUtil):
         return vpn_ip
 
     @staticmethod
-    def _alloc_cascaded_ip(cidr):
+    def _alloc_cascaded_ip(cidr, tail_ip):
         ip_list = cidr.split(".")
-        cascaded_ip = ".".join([ip_list[0], ip_list[1], ip_list[2], CASCADED_TAIL_IP])
+        cascaded_ip = ".".join([ip_list[0], ip_list[1], ip_list[2], tail_ip])
         return cascaded_ip
     
     def _alloc_public_ip(self):
@@ -205,12 +205,18 @@ class HwsCascadedInstaller(utils.CloudUtil):
         """
         self.vpn_public_ip = "117.78.43.201"
         self.vpn_public_ip_id = "7a048551-23c6-4f90-985a-9cf8b8467d90"
+        """
+        result = self.installer.alloc_public_ip()
+        self.cascaded_public_ip = result["public_ip_address"]
+        self.cascaded_public_ip_id = result["id"]
+        """
+        self.cascaded_public_ip = "117.78.38.147"
+        self.cascaded_public_ip_id = "6814a7db-1b70-4b98-bfa6-a80836ac204f"
 
     def _release_public_ip(self):
         self.installer.release_public_ip()
 
     def cloud_preinstall(self):
-        pdb.set_trace()
         self._install_network()
 
     def _install_network(self):
@@ -235,20 +241,20 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._install_cascaded()
 
     def _install_cascaded(self):
-        pdb.set_trace()
-        self.cascaded_internal_base_ip = self._alloc_cascaded_ip(self.internal_base_cidr)
-        self.cascaded_tunnel_bearing_ip = self._alloc_cascaded_ip(self.tunnel_bearing_cidr)
-        self.cascaded_external_api_ip = self._alloc_cascaded_ip(self.external_api_cidr)
-        self.cascaded_debug_ip = self._alloc_cascaded_ip(self.debug_cidr)
+        self.cascaded_internal_base_ip = self._alloc_cascaded_ip(self.internal_base_cidr, "12")
+        self.cascaded_tunnel_bearing_ip = self._alloc_cascaded_ip(self.tunnel_bearing_cidr, "4")
+        self.cascaded_external_api_ip = self._alloc_cascaded_ip(self.external_api_cidr, "4")
+        self.cascaded_debug_ip = self._alloc_cascaded_ip(self.debug_cidr, "4")
 
-        nics = [{"subnet_id": self.external_api_id,
-                 "ip_address": self.cascaded_external_api_ip},
-                {"subnet_id": self.tunnel_bearing_id,
-                 "ip_address": self.cascaded_tunnel_bearing_ip},
+        nics = [{"subnet_id": self.debug_id,
+                 "ip_address": self.cascaded_debug_ip},
                 {"subnet_id": self.internal_base_id,
                  "ip_address": self.cascaded_internal_base_ip},
-                {"subnet_id": self.debug_id,
-                 "ip_address": self.cascaded_debug_ip}]
+                {"subnet_id": self.external_api_id,
+                 "ip_address": self.cascaded_external_api_ip},
+                {"subnet_id": self.tunnel_bearing_id,
+                 "ip_address": self.cascaded_tunnel_bearing_ip}
+                ]
 
         """
         self.cascaded_server_job_id = self.installer.create_vm(self.cascaded_image,
@@ -260,13 +266,16 @@ class HwsCascadedInstaller(utils.CloudUtil):
                                   security_groups=[self.security_group_id])
         self.cascaded_server_id = self.installer.block_until_success(self.cascaded_server_job_id)
         """
-        self.cascaded_server_id = "9408bfdc-990d-4891-a011-09c5804892c3"
+        self.cascaded_server_id = "db81ae8f-e1f2-4fc7-9a4f-7fe307d79425"
+        #port_id = self.installer.get_external_api_port_id()
+        #self.installer.bind_public_ip(self.cascaded_public_ip_id, port_id)
         self.data_handler.write_cascaded_info(self.cascaded_server_id,
+                                              self.cascaded_public_ip,
                                               self.cascaded_external_api_ip,
                                               self.cascaded_tunnel_bearing_ip)
 
         #self.vpn_server_id = self.installer.block_until_success(self.vpn_server_job_id)
-        self.vpn_server_id = "5cb61f66-8df6-4383-8a58-61f993d2e342"
+        self.vpn_server_id = "ff2fe34d-6125-4c5d-a1c1-1edeb337bd2f"
         self.data_handler.write_vpn(self.vpn_server_id, self.vpn_public_ip,
                                     self.vpn_external_api_ip, self.vpn_tunnel_bearing_ip)
         LOG.info("install cascaded success.")
@@ -326,10 +335,11 @@ class HwsCascadedInstaller(utils.CloudUtil):
         }
 
         cascaded_info = {
+            "public_ip": self.cascaded_public_ip,
             "external_api_ip": self.cascaded_external_api_ip,
             "tunnel_bearing_ip": self.cascaded_tunnel_bearing_ip,
             "domain": self._distribute_cloud_domain(
-                    self.cloud_info['azname'], self.cloud_info['region'], "hws")
+                     self.cloud_info['region'], self.cloud_info['azname'], "--hws")
         }
 
         cascaded_subnets_info = {

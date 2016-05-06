@@ -34,6 +34,7 @@ class CloudManager:
 
         if self.cloud_type != 'FS':
           #deploy proxy
+          pdb.set_trace()
           proxy_info = self.cloud_installer.deploy_proxy()
 
           #preinstall
@@ -179,11 +180,17 @@ class SubCloud(object):
 
     def register_cloud(self):
         self.configer.config_vpn()
-        self.configer.config_route()
+        pdb.set_trace()
         self.configer.config_cascading()
+        pdb.set_trace()
         self.configer.config_cascaded()
+        pdb.set_trace()
+        self.configer.config_route()
+        pdb.set_trace()
         self.configer.config_proxy()
+        pdb.set_trace()
         self.configer.config_patch()
+        pdb.set_trace()
         self.configer.config_storge()
         #self.configer.config_extnet()
 

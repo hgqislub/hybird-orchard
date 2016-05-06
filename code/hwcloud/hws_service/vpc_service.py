@@ -421,3 +421,55 @@ class VPCService(HWSService):
         request_body_string = json.dumps(request_body_dict)
 
         return self.post(uri, request_body_string)
+
+    def list_server_nics(self, project_id, server_id):
+        """
+        :param project_id:
+        :param server_id:
+        :return:
+        {
+            "interfaceAttachments": [
+                {
+                    "port_state": "ACTIVE",
+                    "fixed_ips": [
+                        {
+                            "subnet_id": "f8a6e8f8-c2ec-497c-9f23-da9616de54ef",
+                            "ip_address": "192.168.1.3"
+                        }
+                    ],
+                    "net_id": "3cb9bc59-5699-4588-a4b1-b87f96708bc6",
+                    "port_id": "ce531f90-199f-48c0-816c-13e38010b442",
+                    "mac_addr": "fa:16:3e:4c:2c:30"
+                }
+            ]
+        }
+        """
+        uri = "/v2/%s/servers/%s/os-interface" % (project_id, server_id)
+        return self.get(uri)
+
+    def bind_public_ip(self, project_id, public_ip_id, port_id):
+        """
+        :param project_id:
+        :param public_id:
+        :param port_id:
+        :return:
+        {
+            "publicip": {
+                "id": "f588ccfa-8750-4d7c-bf5d-2ede24414706",
+                "status": "PENDING_UPDATE",
+                "type": "5_bgp",
+                "public_ip_address": "161.17.101.7",
+                "port_id": "f588ccfa-8750-4d7c-bf5d-2ede24414706",
+                "tenant_id": "8b7e35ad379141fc9df3e178bd64f55c",
+                "create_time": "2015-07-16 04:10:52",
+                "bandwidth_size": 6
+            }
+        }
+        """
+        uri = "/v1/%s/publicips/%s" % (project_id, public_ip_id)
+        request_body_dict = dict()
+        publicip = dict()
+        publicip["port_id"] = port_id
+        request_body_dict["publicip"] = publicip
+        request_body_string = json.dumps(request_body_dict)
+        return self.put(uri, request_body_string)

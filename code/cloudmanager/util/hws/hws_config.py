@@ -16,10 +16,11 @@ from cloudmanager.cascading_configer import CascadingConfiger
 from hws_cascaded_configer import CascadedConfiger
 from cloudmanager.commonutils import *
 import cloudmanager.exception as exception
-
+from cloud_manager_exception import *
+from cloudmanager.install.retry_decorator import RetryDecorator
 
 LOG = logging.getLogger(__name__)
-
+MAX_RETRY = 10
 class HwsConfig(utils.ConfigUtil):
     def __init__(self):
         self.local_vpn_thread = None
@@ -92,11 +93,12 @@ class HwsConfig(utils.ConfigUtil):
 
     def config_vpn(self):
         #self._config_cascading_vpn()
-        self._config_cascaded_vpn()
+        #self._config_cascaded_vpn()
+        pass
 
-    def config_route(self):
-         LOG.info("add route to cascading ...")
-         self._add_vpn_route_with_api(
+    def _config_cascading_route(self):
+        LOG.info("add route to cascading ...")
+        self._add_vpn_route_with_api(
                 host_ip=self.install_info['cascading_info']['external_api_ip'],
                 user=constant.Cascading.ROOT,
                 passwd=constant.Cascading.ROOT_PWD,
@@ -107,35 +109,37 @@ class HwsConfig(utils.ConfigUtil):
                 self.install_info["cascaded_subnets_info"]["tunnel_bearing"],
                 tunnel_gw=self.install_info["cascading_vpn_info"]['tunnel_bearing_ip'])
 
-         LOG.info("add route to vcloud on cascaded ...")
-         while True:
-             check_host_status(
-                    host=self.install_info["cascaded_info"]["tunnel_bearing_ip"],
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+                raise_exception=InstallCascadedFailed(
+                    current_step="_config_cascaded_route"))
+    def _config_cascaded_route(self):
+        LOG.info("add route to hws on cascaded ...")
+        check_host_status(
+                host=self.install_info["cascaded_info"]["public_ip"],
+                user=constant.VcloudConstant.ROOT,
+                password=constant.VcloudConstant.ROOT_PWD,
+                retry_time=100, interval=3)    #waite cascaded vm started
+
+        self._add_vpn_route_with_api(
+                host_ip=self.install_info["cascaded_info"]["public_ip"],
+                user=constant.VcloudConstant.ROOT,
+                passwd=constant.VcloudConstant.ROOT_PWD,
+                access_cloud_api_subnet=
+                self.install_info["cascading_subnets_info"]["external_api"],
+                api_gw=self.install_info["cascaded_vpn_info"]["external_api_ip"],
+                access_cloud_tunnel_subnet=
+                self.install_info["cascading_subnets_info"]["tunnel_bearing"],
+                tunnel_gw=self.install_info["cascaded_vpn_info"]["tunnel_bearing_ip"])
+
+        check_host_status(
+                    host=self.install_info["cascaded_info"]["external_api_ip"],
                     user=constant.VcloudConstant.ROOT,
                     password=constant.VcloudConstant.ROOT_PWD,
-                    retry_time=100, interval=3)    #waite cascaded vm started
+                    retry_time=1, interval=1)    #test api net
 
-             self._add_vpn_route_with_api(
-                    host_ip=self.install_info["cascaded_info"]["tunnel_bearing_ip"],
-                    user=constant.VcloudConstant.ROOT,
-                    passwd=constant.VcloudConstant.ROOT_PWD,
-                    access_cloud_api_subnet=
-                    self.install_info["cascading_subnets_info"]["external_api"],
-                    api_gw=self.install_info["cascaded_vpn_info"]["external_api_ip"],
-                    access_cloud_tunnel_subnet=
-                    self.install_info["cascading_subnets_info"]["tunnel_bearing"],
-                    tunnel_gw=self.install_info["cascaded_vpn_info"]["tunnel_bearing_ip"])
-             try :
-                 flag = check_host_status(
-                        host=self.install_info["cascaded_info"]["external_api_ip"],
-                        user=constant.VcloudConstant.ROOT,
-                        password=constant.VcloudConstant.ROOT_PWD,
-                        retry_time=1, interval=1)    #test api net
-             except Exception:
-                 continue    #add vpn route again
-
-             if flag :
-                 break
+    def config_route(self):
+        #self._config_cascading_route()
+        self._config_cascaded_route()
 
     @staticmethod
     def _add_vpn_route_with_api(host_ip, user, passwd,
@@ -194,10 +198,8 @@ class HwsConfig(utils.ConfigUtil):
     def config_cascaded(self):
         LOG.info("config cascaded")
 
-        cascaded_vpn_public_ip = self.install_info["cascaded_vpn_info"]['public_ip']
-
         cascaded_cf = CascadedConfiger(
-                public_ip_api = cascaded_vpn_public_ip,
+                public_ip_api = self.install_info["cascaded_info"]["public_ip"],
                 api_ip = self.install_info["cascaded_info"]["external_api_ip"],
                 domain = self.install_info["cascaded_info"]['domain'],
                 user = constant.VcloudConstant.ROOT,

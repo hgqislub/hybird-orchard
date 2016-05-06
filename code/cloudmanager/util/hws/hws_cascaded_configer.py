@@ -37,10 +37,6 @@ class CascadedConfiger(object):
         # config cascaded host
         self._config_az_cascaded()
 
-        time.sleep(20)
-
-        self._config_az_cascaded()
-
         cost_time = time.time() - start_time
         LOG.info("first config success,  cascaded: %s, cost time: %d"
                     % (self.domain, cost_time))
@@ -71,7 +67,7 @@ class CascadedConfiger(object):
 
     def _config_az_cascaded(self):
         LOG.info("start config cascaded host, host: %s" % self.api_ip)
-        #pdb.set_trace()
+        pdb.set_trace()
         for i in range(30):
             try:
                 commonutils.execute_cmd_without_stdout(

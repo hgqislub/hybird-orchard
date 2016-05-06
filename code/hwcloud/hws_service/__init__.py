@@ -60,6 +60,11 @@ class HWSService(object):
         return json.loads(HWSRestMethod.post(self.ak, self.sk, request_url, body, self.service_name, self.region))
 
     @retry(RETRY_TIMES, RETRY_INTERVAL)
+    def put(self, uri, body):
+        request_url = self.composite_full_uri(uri)
+        return json.loads(HWSRestMethod.put(self.ak, self.sk, request_url, body, self.service_name, self.region))
+
+    @retry(RETRY_TIMES, RETRY_INTERVAL)
     def delete(self, uri):
         request_url = self.composite_full_uri(uri)
         return json.loads(HWSRestMethod.delete(self.ak, self.sk, request_url, self.service_name, self.region))

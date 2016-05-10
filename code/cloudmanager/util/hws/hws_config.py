@@ -139,7 +139,8 @@ class HwsConfig(utils.ConfigUtil):
 
     def config_route(self):
         #self._config_cascading_route()
-        self._config_cascaded_route()
+        #self._config_cascaded_route()
+        pass
 
     @staticmethod
     def _add_vpn_route_with_api(host_ip, user, passwd,
@@ -214,6 +215,7 @@ class HwsConfig(utils.ConfigUtil):
     def config_proxy(self):
         # config proxy on cascading host
         #pdb.set_trace()
+        """
         LOG.info("config proxy ...")
         if self.proxy_info is None:
             LOG.info("wait proxy ...")
@@ -229,6 +231,8 @@ class HwsConfig(utils.ConfigUtil):
         self._config_proxy(
                 self.install_info['cascading_info']['external_api_ip'],
                 self.proxy_info)
+        """
+        pass
 
     @staticmethod
     def _config_proxy(cascading_ip, proxy_info):
@@ -262,6 +266,7 @@ class HwsConfig(utils.ConfigUtil):
         #pdb.set_trace()
 
         cascaded_public_ip = self.install_info["cascaded_info"]['tunnel_bearing_ip']
+        """
         self._config_patch_tools(
                 host_ip=self.install_info['cascading_info']['external_api_ip'],
                 user=constant.Cascading.ROOT,
@@ -278,10 +283,10 @@ class HwsConfig(utils.ConfigUtil):
         self._deploy_patches(self.install_info['cascading_info']['external_api_ip'],
                              user=constant.Cascading.ROOT,
                              passwd=constant.Cascading.ROOT_PWD)
-
+        """
         self._start_hws_gateway(self.install_info["cascaded_info"]["public_ip"],
-                                user=constant.HwsConstant.ROOT,
-                                passwd=constant.HwsConstant.ROOT_PWD)
+                                constant.HwsConstant.ROOT,
+                                constant.HwsConstant.ROOT_PWD)
 
     def _config_patch_tools(self, host_ip, user, passwd,
                             cascaded_domain, proxy_info, install_info):
@@ -310,6 +315,7 @@ class HwsConfig(utils.ConfigUtil):
         return True
 
     def _config_hws(self,host_ip, user, passwd):
+        pdb.set_trace()
         for i in range(5):
             try:
                 gong_yao = self.cloud_params['ak']
@@ -324,8 +330,9 @@ class HwsConfig(utils.ConfigUtil):
                 ims_host = 'ims.' + host_endpoint
                 vpc_host = 'vpc.' + host_endpoint
                 vpc_id = self.install_info["cascaded_subnets_info"]["vpc_id"]
-                tunnel_bearing_id = self.install_info["cascaded_subnets_info"]["tunnel_bearing_id"],
+                tunnel_bearing_id = self.install_info["cascaded_subnets_info"]["tunnel_bearing_id"]
                 internal_base_id = self.install_info["cascaded_subnets_info"]["internal_base_id"]
+                subnet_id = tunnel_bearing_id + "," + internal_base_id
                 execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
                     cmd='cd %(dis)s; sh %(script)s '
@@ -340,7 +347,7 @@ class HwsConfig(utils.ConfigUtil):
                                constant.PatchesConstant.CONFIG_HWS_SCRIPT,
                            "project_id": project_id,
                            "vpc_id": vpc_id,
-                           "subnet_id": tunnel_bearing_id + "," + internal_base_id,
+                           "subnet_id": subnet_id,
                            "service_region": region,
                            "resource_region": resource_region,
                            "ecs_host": ecs_host,
@@ -371,7 +378,8 @@ class HwsConfig(utils.ConfigUtil):
 
 
         return True
-
+    
+    @staticmethod
     def _start_hws_gateway(host_ip, user, passwd):
         execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
@@ -379,7 +387,7 @@ class HwsConfig(utils.ConfigUtil):
                     % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
                         "script":
                         constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
-        )
+                    )
 
 
 

@@ -100,7 +100,7 @@ class CascadedConfiger(object):
                     host=self.public_ip_api,
                     user=constant.VcloudConstant.ROOT,
                     password=constant.VcloudConstant.ROOT_PWD,
-                    cmd='cd %(dir)s; python %(script)s '
+                    cmd='cd %(dir)s; source /root/adminrc;python %(script)s '
                         '%(cascading_domain)s %(cascading_api_ip)s '
                         '%(cascaded_domain)s %(cascaded_ip)s '
                         '%(gateway)s'

@@ -275,8 +275,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self.cascaded_server_id = self.installer.block_until_create_vm_success(self.cascaded_server_job_id)
         """
         self.cascaded_server_id = "db81ae8f-e1f2-4fc7-9a4f-7fe307d79425"
-        pdb.set_trace()
-
+        #self._create_cascaded_nics()
         self.install_data_handler.write_cascaded_info(self.cascaded_server_id,
                                                       self.cascaded_public_ip,
                                                       self.cascaded_external_api_ip,
@@ -290,19 +289,25 @@ class HwsCascadedInstaller(utils.CloudUtil):
 
     def _create_cascaded_nics(self):
         ##nic should add one by one to maintain right sequence
+        pdb.set_trace()
         security_groups = [{"id":self.security_group_id}]
+
         job_id = self.installer.add_nics(self.cascaded_server_id, self.internal_base_id,
                                 security_groups, self.cascaded_internal_base_ip)
         self.installer.block_until_create_nic_success(job_id)
         job_id = self.installer.add_nics(self.cascaded_server_id, self.external_api_id,
                                 security_groups, self.cascaded_external_api_ip)
-        self.installer.block_until_create_nic_success(job_id)
+        external_api_nic_id = self.installer.block_until_create_nic_success(job_id)
+
+        external_port_id = self.installer.get_external_api_port_id(
+                self.cascaded_server_id, external_api_nic_id)
+        self.installer.bind_public_ip(self.cascaded_public_ip_id, external_port_id)
+
         job_id = self.installer.add_nics(self.cascaded_server_id, self.tunnel_bearing_id,
                                 security_groups, self.cascaded_tunnel_bearing_ip)
         self.installer.block_until_create_nic_success(job_id)
 
-        external_port_id = self.installer.get_external_api_port_id()
-        self.installer.bind_public_ip(self.cascaded_public_ip_id, external_port_id)
+        self.installer.reboot(self.cascaded_server_id, "SOFT")
 
     def uninstall_cascaded(self):
         self._uninstall_cascaded()

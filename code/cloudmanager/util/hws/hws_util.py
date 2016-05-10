@@ -3,10 +3,13 @@ import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
 
 from hwcloud.hws_service.hws_client import HWSClient
-from cloudmanager.install.retry_decorator import RetryDecorator
+from retry_decorator import RetryDecorator
 from heat.openstack.common import log as logging
 from cloud_manager_exception import *
 import time
+import cloudmanager.constant as constant
+from cloudmanager.commonutils import *
+
 RSP_STATUS = "status"
 RSP_BODY = "body"
 RSP_STATUS_OK = "2"
@@ -18,6 +21,16 @@ MAX_CHECK_TIMES = 100
 
 LOG = logging.getLogger(__name__)
 import pdb
+
+def start_hws_gateway(host_ip, user, passwd):
+    execute_cmd_without_stdout(
+                host=host_ip, user=user, password=passwd,
+                cmd='cd %(dis)s; sh %(script)s '
+                % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
+                    "script":
+                    constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
+    )
+
 class HwsInstaller(object):
     def __init__(self, cloud_info):
         pdb.set_trace()
@@ -111,7 +124,7 @@ class HwsInstaller(object):
             raise InstallCascadedFailed(current_step="get job detail")
         return result[RSP_BODY]
 
-    def block_until_success(self, job_id):
+    def block_until_create_vm_success(self, job_id):
         server_id = None
         for i in range(MAX_CHECK_TIMES):
             result = self.get_job_detail(job_id)
@@ -127,6 +140,22 @@ class HwsInstaller(object):
         if server_id is None:
             raise InstallCascadedFailed(current_step="create vm")
         return server_id
+
+    def block_until_create_nic_success(self, job_id):
+        nic_id = None
+        for i in range(MAX_CHECK_TIMES):
+            result = self.get_job_detail(job_id)
+            status = result[RSP_STATUS]
+            if status == "FAILED":
+                break
+            elif status == "SUCCESS":
+                nic_id = result['entities']['sub_jobs'][0]["entities"]["nic_id"]
+                break
+            else:
+                time.sleep(10)
+
+        if nic_id is None:
+            raise InstallCascadedFailed(current_step="create nic")
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
         raise_exception=InstallCascadedFailed(
@@ -219,7 +248,7 @@ class HwsInstaller(object):
         status = str(result[RSP_STATUS])
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
-            raise InstallCascadedFailed(current_step="get security group")
+            raise InstallCascadedFailed(current_step="get_external_api_port_id")
         interfaceAttachments = result[RSP_BODY]["interfaceAttachments"]
         for interface in interfaceAttachments:
             if interface["fixed_ips"]["subnet_id"] == external_api_subnet_id:
@@ -236,3 +265,30 @@ class HwsInstaller(object):
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="bind public ip to cascaded")
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
+        current_step="add nics to vm"))
+    def add_nics(self, server_id, subnet_id, security_groups, ip_address = None):
+        nic = dict()
+        nic["subnet_id"] = subnet_id
+        nic["security_groups"] = security_groups
+        if ip_address:
+            nic["ip_address"] = ip_address
+        nics = [nic]
+        result = self.hws_client.ecs.add_nics(
+                self.project_id, server_id, nics)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise InstallCascadedFailed(current_step="add nics to cascaded")
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
+        current_step="reboot cascaded"))
+    def reboot(self, server_id, type):
+        result = self.hws_client.ecs.reboot(self.project_id, server_id, type)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise InstallCascadedFailed(current_step="reboot cascaded")

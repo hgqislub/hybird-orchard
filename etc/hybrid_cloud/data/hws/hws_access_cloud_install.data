@@ -1,1 +1,39 @@
-{}
+{
+    "HWS@91d957f0b92d48f0b184c26975d2346e@az41": {
+        "subnets": {
+            "internal_base": {
+                "cidr": "172.28.0.0/20",
+                "id": "d0fac5ac-4c0e-457c-9dad-2f889f5f3788"
+            },
+            "debug": {
+                "cidr": "172.16.0.0/24",
+                "id": "e31cce42-c216-4988-9643-ef51436f86f3"
+            },
+            "external_api": {
+                "cidr": "172.16.1.0/24",
+                "id": "5fd5a726-5563-4541-8504-2c97fb14275b"
+            },
+            "tunnel_bearing": {
+                "cidr": "172.28.48.0/20",
+                "id": "8237069f-3715-455f-9388-94848fc1cb1a"
+            }
+        },
+        "vpn": {
+            "public_ip": "117.78.43.201",
+            "server_id": "ff2fe34d-6125-4c5d-a1c1-1edeb337bd2f",
+            "external_api_ip": "172.16.1.254",
+            "tunnel_bearing_ip": "172.28.48.254"
+        },
+        "vpc": {
+            "cidr": "172.16.0.0/12",
+            "id": "c708095b-cc66-42c7-a9cb-9268d42a6aaa",
+            "name": "hgqvpc"
+        },
+        "cascaded": {
+            "public_ip": "117.78.38.147",
+            "server_id": "db81ae8f-e1f2-4fc7-9a4f-7fe307d79425",
+            "external_api_ip": "172.16.1.4",
+            "tunnel_bearing_ip": "172.28.48.4"
+        }
+    }
+}

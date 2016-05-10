@@ -42,3 +42,9 @@ class HwsCloudInfoPersist:
 
     def write_cloud_info(self, data):
         self.info_handler.write_cloud_info(data)
+
+    def read_cloud_info(self):
+        return self.info_handler.read_cloud_info()
+
+    def delete_cloud_info(self):
+        self.info_handler.delete_cloud_info()

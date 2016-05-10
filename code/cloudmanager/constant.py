@@ -31,6 +31,7 @@ class Cascaded(object):
     ROOT_PWD = "cnp200@HW"
     REMOTE_SCRIPTS_DIR = "/root/cloud_manager/cascaded/"
     REMOTE_VCLOUD_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/cascaded/"
+    REMOTE_HWS_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/cascaded/"
     CONFIG_VCLOUD_SCRIPT = "config_vcloud.sh"
     MODIFY_PROXY_SCRIPT = "modify_proxy.sh"
     MODIFY_CASCADED_SCRIPT = "modify_cascaded_domain.sh"
@@ -63,6 +64,9 @@ class PatchesConstant(object):
     CONFIG_PATCHES_SCRIPT = "config_patches_tool_config.sh"
     CONFIG_AWS_SCRIPT = "config_aws.sh"
     CONFIG_ROUTE_SCRIPT = "config_add_route.sh"
+    REMOTE_HWS_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/patches/patches_tool/hws_patch"
+    CONFIG_HWS_SCRIPT = "config_hws.sh"
+    START_HWS_GATEWAY_SCRIPT = "hws_gateway.sh"
 
 
 class RemoveConstant(object):
@@ -110,6 +114,10 @@ class FusionsphereConstant(object):
 
 
 class VcloudConstant(object):
+    ROOT = "root"
+    ROOT_PWD = "Huawei@CLOUD8!"
+
+class HwsConstant(object):
     ROOT = "root"
     ROOT_PWD = "Huawei@CLOUD8!"
 

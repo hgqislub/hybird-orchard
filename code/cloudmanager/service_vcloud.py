@@ -34,7 +34,6 @@ class CloudManager:
 
         if self.cloud_type != 'FS':
           #deploy proxy
-          pdb.set_trace()
           proxy_info = self.cloud_installer.deploy_proxy()
 
           #preinstall

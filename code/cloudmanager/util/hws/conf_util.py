@@ -85,16 +85,28 @@ class CloudInfoHandler:
         else:
             return None
 
-    def delete_cloud_info(self, cloud_id):
+    def read_cloud_info(self):
         self._file_lock.acquire()
         try:
             cloud_dict = self.get_all_unit_info()
-            if cloud_id in cloud_dict.keys():
-                cloud_dict.pop(cloud_id)
+            if self.cloud_id in cloud_dict.keys():
+                return cloud_dict[self.cloud_id]
+        except Exception as e:
+            LOG.error("read vcloud access cloud error, cloud_id: %s, error: %s"
+                         % (self.cloud_id, e.message))
+        finally:
+            self._file_lock.release()
+
+    def delete_cloud_info(self):
+        self._file_lock.acquire()
+        try:
+            cloud_dict = self.get_all_unit_info()
+            if self.cloud_id in cloud_dict.keys():
+                cloud_dict.pop(self.cloud_id)
             write_conf(self.file_path, cloud_dict)
         except Exception as e:
             LOG.error("delete vcloud access cloud error, cloud_id: %s, error: %s"
-                         % (cloud_id, e.message))
+                         % (self.cloud_id, e.message))
         finally:
             self._file_lock.release()
 

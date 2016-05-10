@@ -359,3 +359,15 @@ class ECSService(HWSService):
         response = self.get(uri)
         return response
 
+    def add_nics(self, project_id, server_id, nics):
+        """
+        :param project_id: string
+        :param server_id: string
+        :param nics: list
+        :return:
+        """
+        uri = '/v1/%s/cloudservers/%s/nics' % (project_id, server_id)
+        request_body_dict = {"nics": nics}
+        request_body_string = json.dumps(request_body_dict)
+        response = self.post(uri, request_body_string)
+        return response

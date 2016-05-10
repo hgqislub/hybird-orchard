@@ -68,6 +68,32 @@ class CascadedConfiger(object):
     def _config_az_cascaded(self):
         LOG.info("start config cascaded host, host: %s" % self.api_ip)
         pdb.set_trace()
+        # modify dns server address
+        address = "/%(cascading_domain)s/%(cascading_ip)s" \
+                  % {"cascading_domain": self.cascading_domain,
+                     "cascading_ip": self.cascading_api_ip}
+        for i in range(3):
+            try:
+                commonutils.execute_cmd_without_stdout(
+                    host=self.public_ip_api,
+                    user=self.user,
+                    password=self.password,
+                    cmd='cd %(dir)s; sh %(script)s add %(address)s'
+                        % {"dir": constant.PublicConstant.SCRIPTS_DIR,
+                           "script": constant.PublicConstant.
+                               MODIFY_DNS_SERVER_ADDRESS,
+                           "address": address})
+                break
+            except exception.SSHCommandFailure as e:
+                LOG.error("modify cascaded dns address error, cascaded: "
+                             "%s, error: %s"
+                             % (self.domain, e.format_message()))
+                time.sleep(1)
+
+        LOG.info(
+            "config cascaded dns address success, cascaded: %s"
+            % self.public_ip_api)
+
         for i in range(30):
             try:
                 commonutils.execute_cmd_without_stdout(

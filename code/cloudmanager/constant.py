@@ -25,7 +25,6 @@ class VpnConstant(object):
     REMOTE_ROUTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/vpn/"
     ADD_VPN_ROUTE_SCRIPT = "add_vpn_route.sh"
 
-
 class Cascaded(object):
     ROOT = "root"
     ROOT_PWD = "cnp200@HW"

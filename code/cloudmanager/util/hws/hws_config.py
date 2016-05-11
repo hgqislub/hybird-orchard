@@ -294,8 +294,9 @@ class HwsConfig(utils.ConfigUtil):
             try:
                 execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
-                    cmd='cd %(dis)s; sh %(script)s '
+                     cmd='cd %(dis)s; sh %(script)s '
                         '%(proxy_num)s %(proxy_host_name)s %(cascaded_domain)s '
+                        '%(local_api_subnet)s %(cloud_vpn_api_ip)s '
                         '%(local_tunnel_subnet)s %(cloud_vpn_tunnel_ip)s '
                         '%(cascading_domain)s'
                         % {"dis": constant.PatchesConstant.REMOTE_SCRIPTS_DIR,
@@ -304,6 +305,8 @@ class HwsConfig(utils.ConfigUtil):
                            "proxy_num": proxy_info["proxy_num"],
                            "proxy_host_name": proxy_info["id"],
                            "cascaded_domain": cascaded_domain,
+                           "local_api_subnet": install_info['cascading_subnets_info']['external_api'],
+                           "cloud_vpn_api_ip": install_info["cascaded_vpn_info"]["external_api_ip"],
                            "local_tunnel_subnet": install_info['cascading_subnets_info']['tunnel_bearing'],
                            "cloud_vpn_tunnel_ip": install_info["cascaded_vpn_info"]["tunnel_bearing_ip"],
                            "cascading_domain": install_info["cascading_info"]["domain"]})

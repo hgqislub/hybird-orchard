@@ -245,7 +245,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._install_cascaded()
 
     def cloud_uninstall(self):
-        self._cloud_uninstall()
+        #self._cloud_uninstall()
+        pass
 
     def _cloud_uninstall(self):
         self.uninstall_cascaded()
@@ -431,7 +432,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         cloud_info = self.cloud_info_handler.read_cloud_info()
         return cloud_info
 
-    def get_vcloud_access_cloud_install_info(self):
+    def get_vcloud_access_cloud_install_info(self, installer):
         self._read_access_cloud_install_info()
         return self._read_access_cloud_info()
 

@@ -63,15 +63,12 @@ class CloudInfoHandler:
             self._file_lock.release()
 
     def get_all_unit_info(self):
-        self._file_lock.acquire()
         try:
             cloud_dict = read_conf(self.file_path)
         except Exception as e:
             cloud_dict = {}
             LOG.error("get cloud info error, cloud_id: %s, error: %s"
                          % (self.cloud_id, e.message))
-        finally:
-            self._file_lock.release()
         return cloud_dict
 
     def get_unit_info(self, unit_key):

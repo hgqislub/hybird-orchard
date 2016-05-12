@@ -15,6 +15,7 @@ LOG=logging.getLogger(__name__)
 
 class HwsCloudInfo(utils.CloudInfo):
     def __init__(self):
+        self.cloud_proxy = None
         pass
 
     def initialize(self, cloud_params, install_info, proxy_info, installer):

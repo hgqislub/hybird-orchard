@@ -52,12 +52,6 @@ class CloudManager:
         self.cloud_installer.register_cloud()
 
     def delete_cloud(self):
-
-        #get cloud id
-        cloud_id = "@".join([self.cloud_params['vcloud_url'],self.cloud_params['vcloud_org'],
-                                  self.cloud_params['vcloud_vdc'], self.cloud_params['region_name'],
-                                  self.cloud_params['azname']])
-
         cloudinstaller = SubCloud(self.cloud_params)    #initialize param
         install_info = cloudinstaller.installer.get_vcloud_access_cloud_install_info(installer=cloudinstaller.installer)
         cloudinstaller.cloudinfo = cloudinstaller.installer.get_vcloud_cloud()

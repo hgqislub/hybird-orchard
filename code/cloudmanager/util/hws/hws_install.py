@@ -53,9 +53,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self.install_data_handler = HwsCloudInfoPersist(_access_cloud_install_info_file, self.cloud_id)
         self.cloud_info_handler = HwsCloudInfoPersist(_access_cloud_info_file, self.cloud_id)
 
-
-
-
     def _read_env(self):
         try:
             env_info = read_conf(_environment_conf)
@@ -429,10 +426,14 @@ class HwsCascadedInstaller(utils.CloudUtil):
             self.vpn_server_id = cloud_info["vpn"]["server_id"]
         if "cascaded" in cloud_info.keys():
             self.cascaded_server_id = cloud_info["cascaded"]["server_id"]
+
+    def _read_access_cloud_info(self):
+        cloud_info = self.cloud_info_handler.read_cloud_info()
         return cloud_info
 
     def get_vcloud_access_cloud_install_info(self):
-        return self._read_access_cloud_install_info()
+        self._read_access_cloud_install_info()
+        return self._read_access_cloud_info()
 
     def get_vcloud_cloud(self):
         pass

@@ -39,6 +39,8 @@ class HwsCloudInfoPersist:
 
         self.info_handler.write_unit_info("vpn", vpn_info)
 
+    def write_proxy(self, proxy_info):
+        self.info_handler.write_unit_info("proxy_info", proxy_info)
 
     def write_cloud_info(self, data):
         self.info_handler.write_cloud_info(data)

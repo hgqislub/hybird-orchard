@@ -32,7 +32,6 @@ class HwsConfig(utils.ConfigUtil):
         self.proxy_info = None
         self.installer = None
         self.cloud_info = None
-        self.vpn_conn_name =None
         self.cloud_params = None
 
     def initialize(self, cloud_params, install_info, proxy_info, cloud_info, installer):
@@ -41,7 +40,7 @@ class HwsConfig(utils.ConfigUtil):
         self.proxy_info = proxy_info
         self.installer = installer
         self.cloud_info = cloud_info
-        self.vpn_conn_name = install_info["vpn_conn_name"]
+        self.installer.cloud_info_handler.write_proxy(proxy_info)
 
     def config_vpn_only(self):
         LOG.info("config cloud vpn only")
@@ -49,20 +48,21 @@ class HwsConfig(utils.ConfigUtil):
 
     def _config_cascading_vpn(self):
         LOG.info("config local vpn")
+        vpn_conn_name = self.install_info["vpn_conn_name"]
         local_vpn_cf = VpnConfiger(
                 host_ip=self.install_info['cascading_vpn_info']['external_api_ip'],
                 user=constant.VpnConstant.VPN_ROOT,
                 password=constant.VpnConstant.VPN_ROOT_PWD)
 
         local_vpn_cf.register_add_conns(
-                tunnel_name=self.vpn_conn_name["api_conn_name"],
+                tunnel_name=vpn_conn_name["api_conn_name"],
                 left_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
                 left_subnet=self.install_info['cascading_subnets_info']['external_api'],
                 right_public_ip=self.install_info["cascaded_vpn_info"]["public_ip"],
                 right_subnet=self.install_info["cascaded_subnets_info"]["external_api"])
 
         local_vpn_cf.register_add_conns(
-                tunnel_name=self.vpn_conn_name["tunnel_conn_name"],
+                tunnel_name=vpn_conn_name["tunnel_conn_name"],
                 left_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
                 left_subnet=self.install_info['cascading_subnets_info']['tunnel_bearing'],
                 right_public_ip=self.install_info['cascaded_vpn_info']['public_ip'],
@@ -71,20 +71,21 @@ class HwsConfig(utils.ConfigUtil):
 
     def _config_cascaded_vpn(self):
         LOG.info("config vcloud vpn thread")
+        vpn_conn_name = self.install_info["vpn_conn_name"]
         cloud_vpn_cf = VpnConfiger(
                 host_ip=self.install_info["cascaded_vpn_info"]["public_ip"],
                 user=constant.VpnConstant.VCLOUD_VPN_ROOT,
                 password=constant.VpnConstant.VCLOUD_VPN_ROOT_PWD)
 
         cloud_vpn_cf.register_add_conns(
-                tunnel_name=self.vpn_conn_name["api_conn_name"],
+                tunnel_name=vpn_conn_name["api_conn_name"],
                 left_public_ip=self.install_info['cascaded_vpn_info']['public_ip'],
                 left_subnet=self.install_info["cascaded_subnets_info"]["external_api"],
                 right_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
                 right_subnet=self.install_info['cascading_subnets_info']['external_api'])
 
         cloud_vpn_cf.register_add_conns(
-                tunnel_name=self.vpn_conn_name["tunnel_conn_name"],
+                tunnel_name=vpn_conn_name["tunnel_conn_name"],
                 left_public_ip=self.install_info['cascaded_vpn_info']['public_ip'],
                 left_subnet=self.install_info['cascaded_subnets_info']['tunnel_bearing'],
                 right_public_ip=self.install_info['cascading_vpn_info']['public_ip'],
@@ -378,8 +379,6 @@ class HwsConfig(utils.ConfigUtil):
             host=host_ip, user=user, password=passwd,
             cmd='cd %s; python config.py cascading'
                 % constant.PatchesConstant.PATCH_LUNCH_DIR)
-
-
         return True
     
     @staticmethod
@@ -391,8 +390,6 @@ class HwsConfig(utils.ConfigUtil):
                         "script":
                         constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
                     )
-
-
 
     def config_storge(self):
         LOG.info("config storage...")
@@ -433,81 +430,80 @@ class HwsConfig(utils.ConfigUtil):
 
     def remove_existed_cloud(self):
         #config cascading unregister
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
-                host=self.installer.cascading_api_ip,
+                host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
                 cmd='cd %(dir)s; sh %(script)s %(cascaded_domain)s'
                     % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
                        "script":
                            constant.RemoveConstant.REMOVE_CINDER_SERVICE_SCRIPT,
-                       "cascaded_domain": self.cloud_info.cascaded_domain})
+                       "cascaded_domain": self.install_info["cascaded_info"]["domain"]})
         except Exception as e:
             LOG.error("remove cinder service error, error: %s" % e.message)
 
         try:
             execute_cmd_without_stdout(
-                host=self.installer.cascading_api_ip,
+                host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
                 cmd='cd %(dir)s; sh %(script)s %(cascaded_domain)s'
                     % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
                        "script":
                            constant.RemoveConstant.REMOVE_NEUTRON_AGENT_SCRIPT,
-                       "cascaded_domain": self.cloud_info.cascaded_domain})
+                       "cascaded_domain": self.install_info["cascaded_info"]["domain"]})
 
             execute_cmd_without_stdout(
-                host=self.installer.cascading_api_ip,
+                host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
                 cmd='cd %(dir)s; sh %(script)s %(proxy_host)s'
                     % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
                        "script":
                            constant.RemoveConstant.REMOVE_NEUTRON_AGENT_SCRIPT,
-                       "proxy_host": self.cloud_info.cloud_proxy["id"]})
+                       "proxy_host": self.install_info["proxy_info"]["id"]})
 
         except Exception as e:
             LOG.error("remove neutron agent error, error: %s" % e.message)
 
         try:
             execute_cmd_without_stdout(
-                host=self.installer.cascading_api_ip,
+                host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
                 cmd='cd %(dir)s; sh %(script)s %(cascaded_domain)s'
                     % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
                        "script": constant.RemoveConstant.REMOVE_KEYSTONE_SCRIPT,
-                       "cascaded_domain": self.cloud_info.cascaded_domain})
+                       "cascaded_domain": self.install_info["cascaded_info"]["domain"]})
         except SSHCommandFailure:
             LOG.error("remove keystone endpoint error.")
 
         try:
             execute_cmd_without_stdout(
-                host=self.installer.cascading_api_ip,
+                host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
                 cmd='cd %(dir)s; '
                     'sh %(script)s %(proxy_host_name)s %(proxy_num)s'
                     % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
                        "script": constant.RemoveConstant.REMOVE_PROXY_SCRIPT,
-                       "proxy_host_name": self.cloud_info.cloud_proxy["id"],
-                       "proxy_num": self.cloud_info.cloud_proxy["proxy_num"]})
+                       "proxy_host_name": self.install_info["proxy_info"]["id"],
+                       "proxy_num": self.install_info["proxy_info"]["proxy_num"]})
         except SSHCommandFailure:
             LOG.error("remove proxy error.")
 
-        if self.cloud_params['localmode'] == True :
-            cascaded_api_ip = self.install_info["cascaded"]["public_ip_api_reverse"]
-        else :
-            cascaded_api_ip = self.install_info["cascaded"]['api_ip']
+
+        cascaded_api_ip = self.install_info["cascaded_info"]['external_api_ip']
 
         address = "/%(cascaded_domain)s/%(cascaded_ip)s" \
-                  % {"cascaded_domain": self.cloud_info.cascaded_domain,
+                  % {"cascaded_domain": self.install_info["cascaded_info"]["domain"],
                      "cascaded_ip": cascaded_api_ip}
 
         try:
             execute_cmd_without_stdout(
-                host=self.installer.cascading_api_ip,
+                host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
                 cmd='cd %(dir)s; sh %(script)s remove %(address)s'
@@ -519,9 +515,9 @@ class HwsConfig(utils.ConfigUtil):
             LOG.error("remove dns address error.")
 
         # config local_vpn
-        vpn_conn_name = self.cloud_info.get_vpn_conn_name()
+        vpn_conn_name = self.install_info["vpn_conn_name"]
         try:
-            local_vpn = VPN(self.installer.local_vpn_ip,
+            local_vpn = VPN(self.install_info["cascading_vpn_info"]["public_ip"],
                             constant.VpnConstant.VPN_ROOT,
                             constant.VpnConstant.VPN_ROOT_PWD)
 

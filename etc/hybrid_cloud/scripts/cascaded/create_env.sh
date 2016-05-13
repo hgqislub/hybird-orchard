@@ -24,6 +24,9 @@ export CINDER_ENDPOINT_TYPE=publicURL
 export OS_ENDPOINT_TYPE=publicURL
 export OS_VOLUME_API_VERSION=2
 export OS_PASSWORD=FusionSphere123
+export CPS_USERNAME=cps_admin
+export CPS_PASSWORD=FusionSphere123
+
 CONFIG
 
 cp ${EVN_FILE} ${ADMINRC}

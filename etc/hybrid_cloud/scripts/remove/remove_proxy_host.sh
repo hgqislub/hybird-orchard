@@ -17,6 +17,7 @@ echo ". /root/adminrc" >> ${RUN_SCRIPT}
 echo "cps role-host-delete --host ${proxy_host_id} blockstorage-${proxy}" >> ${RUN_SCRIPT}
 echo "cps role-host-delete --host ${proxy_host_id} compute-${proxy}" >> ${RUN_SCRIPT}
 echo "cps role-host-delete --host ${proxy_host_id} network-${proxy}" >> ${RUN_SCRIPT}
+echo "cps role-host-delete --host ${proxy_host_id} dhcp" >> ${RUN_SCRIPT}
 
 echo cps commit >> ${RUN_SCRIPT}
 

@@ -11,10 +11,10 @@ from cloudmanager.exception import *
 from cloudmanager.environmentinfo import *
 import json
 from cloudmanager.subnet_manager import SubnetManager
-from conf_util import *
 from hws_util import *
 from hws_cloud_info_persist import *
 import cloudmanager.constant as constant
+from hws_cloudinfo import HwsCloudInfo
 import pdb
 
 LOG = logging.getLogger(__name__)
@@ -437,7 +437,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         return self._read_access_cloud_info()
 
     def get_vcloud_cloud(self):
-        pass
+        return HwsCloudInfo()
 
 
 

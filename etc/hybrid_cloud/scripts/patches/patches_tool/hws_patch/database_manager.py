@@ -6,7 +6,7 @@ import os
 import traceback
 import time
 
-from hwcloud import LOG
+from log import LOG
 
 TIMES = 50
 INTERVAL = 0.1

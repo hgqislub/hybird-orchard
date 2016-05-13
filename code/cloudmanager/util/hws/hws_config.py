@@ -40,7 +40,8 @@ class HwsConfig(utils.ConfigUtil):
         self.proxy_info = proxy_info
         self.installer = installer
         self.cloud_info = cloud_info
-        self.installer.cloud_info_handler.write_proxy(proxy_info)
+        if proxy_info:
+            self.installer.cloud_info_handler.write_proxy(proxy_info)
 
     def config_vpn_only(self):
         LOG.info("config cloud vpn only")
@@ -267,7 +268,7 @@ class HwsConfig(utils.ConfigUtil):
         #pdb.set_trace()
 
         cascaded_public_ip = self.install_info["cascaded_info"]['tunnel_bearing_ip']
-        """
+
         self._config_patch_tools(
                 host_ip=self.install_info['cascading_info']['external_api_ip'],
                 user=constant.Cascading.ROOT,
@@ -284,7 +285,7 @@ class HwsConfig(utils.ConfigUtil):
         self._deploy_patches(self.install_info['cascading_info']['external_api_ip'],
                              user=constant.Cascading.ROOT,
                              passwd=constant.Cascading.ROOT_PWD)
-        """
+
         self._start_hws_gateway(self.install_info["cascaded_info"]["public_ip"],
                                 constant.HwsConstant.ROOT,
                                 constant.HwsConstant.ROOT_PWD)
@@ -517,10 +518,10 @@ class HwsConfig(utils.ConfigUtil):
         # config local_vpn
         vpn_conn_name = self.install_info["vpn_conn_name"]
         try:
-            local_vpn = VPN(self.install_info["cascading_vpn_info"]["public_ip"],
+            local_vpn = VPN(self.install_info["cascading_vpn_info"]["external_api_ip"],
                             constant.VpnConstant.VPN_ROOT,
                             constant.VpnConstant.VPN_ROOT_PWD)
-
+            local_vpn.remove_tunnel(vpn_conn_name["api_conn_name"])
             local_vpn.remove_tunnel(vpn_conn_name["tunnel_conn_name"])
         except SSHCommandFailure:
             LOG.error("remove conn error.")

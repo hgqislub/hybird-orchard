@@ -211,7 +211,9 @@ class HwsConfig(utils.ConfigUtil):
                 cascading_domain = self.install_info['cascading_info']['domain'],
                 cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"],
                 cascaded_api_subnet_gateway=
-                self.install_info['cascaded_subnets_info']['external_api_gateway_ip'])
+                self.install_info['cascaded_subnets_info']['external_api_gateway_ip'],
+                cascaded_aggregate = self.install_info['cascaded_info']["aggregate"]
+        )
 
         cascaded_cf.do_config()
 
@@ -265,7 +267,6 @@ class HwsConfig(utils.ConfigUtil):
 
     def config_patch(self):
         LOG.info("config patches config ...")
-        pdb.set_trace()
 
         cascaded_public_ip = self.install_info["cascaded_info"]['tunnel_bearing_ip']
 
@@ -281,11 +282,11 @@ class HwsConfig(utils.ConfigUtil):
                 host_ip=cascaded_public_ip,
                 user=constant.HwsConstant.ROOT,
                 passwd=constant.HwsConstant.ROOT_PWD)
-
+        """
         self._deploy_patches(self.install_info['cascading_info']['external_api_ip'],
                              user=constant.Cascading.ROOT,
                              passwd=constant.Cascading.ROOT_PWD)
-
+        """
         self._start_hws_gateway(self.install_info["cascaded_info"]["public_ip"],
                                 constant.HwsConstant.ROOT,
                                 constant.HwsConstant.ROOT_PWD)
@@ -295,7 +296,6 @@ class HwsConfig(utils.ConfigUtil):
         LOG.info("config patches tools  ...")
         for i in range(10):
             try:
-                pdb.set_trace()
                 execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
                      cmd='cd %(dis)s; sh %(script)s '
@@ -323,7 +323,6 @@ class HwsConfig(utils.ConfigUtil):
 
     def _config_hws(self,host_ip, user, passwd):
         LOG.info("config hws /etc/nova/nova.json ...")
-        pdb.set_trace()
         for i in range(5):
             try:
                 gong_yao = self.cloud_params['ak']
@@ -380,7 +379,6 @@ class HwsConfig(utils.ConfigUtil):
     @staticmethod
     def _deploy_patches(host_ip, user, passwd):
         LOG.info("deploy patches ...")
-        pdb.set_trace()
         execute_cmd_without_stdout(
             host=host_ip, user=user, password=passwd,
             cmd='cd %s; python config.py cascading'
@@ -390,7 +388,6 @@ class HwsConfig(utils.ConfigUtil):
     @staticmethod
     def _start_hws_gateway(host_ip, user, passwd):
         LOG.info("start hws java gateway ...")
-        pdb.set_trace()
         execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
                     cmd='cd %(dis)s; sh %(script)s '
@@ -398,6 +395,10 @@ class HwsConfig(utils.ConfigUtil):
                         "script":
                         constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
                     )
+
+    @staticmethod
+    def _stop_hws_gateway(host_ip, user, password):
+        pass
 
     def config_storge(self):
         LOG.info("config storage...")
@@ -437,7 +438,19 @@ class HwsConfig(utils.ConfigUtil):
         return True
 
     def remove_existed_cloud(self):
-        #config cascading unregister
+        self.remove_cinder()
+        self.remove_neutron_agent()
+        self.remove_keystone()
+        self.remove_proxy()
+        self.remove_cascading_dns()
+        self.remove_cascading_route()
+        self.remove_cascading_vpn_tunnel()
+        self._stop_hws_gateway(host_ip= self.install_info["cascading_info"]["external_api_ip"],
+                user=constant.Cascading.ROOT,
+                password=constant.Cascading.ROOT_PWD)
+
+
+    def remove_cinder(self):
         cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
@@ -452,6 +465,8 @@ class HwsConfig(utils.ConfigUtil):
         except Exception as e:
             LOG.error("remove cinder service error, error: %s" % e.message)
 
+    def remove_neutron_agent(self):
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
                 host= cascading_api_ip,
@@ -472,10 +487,11 @@ class HwsConfig(utils.ConfigUtil):
                        "script":
                            constant.RemoveConstant.REMOVE_NEUTRON_AGENT_SCRIPT,
                        "proxy_host": self.install_info["proxy_info"]["id"]})
-
         except Exception as e:
             LOG.error("remove neutron agent error, error: %s" % e.message)
 
+    def remove_keystone(self):
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
                 host= cascading_api_ip,
@@ -488,6 +504,8 @@ class HwsConfig(utils.ConfigUtil):
         except SSHCommandFailure:
             LOG.error("remove keystone endpoint error.")
 
+    def remove_proxy(self):
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
                 host= cascading_api_ip,
@@ -502,13 +520,12 @@ class HwsConfig(utils.ConfigUtil):
         except SSHCommandFailure:
             LOG.error("remove proxy error.")
 
-
+    def remove_cascading_dns(self):
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         cascaded_api_ip = self.install_info["cascaded_info"]['external_api_ip']
-
         address = "/%(cascaded_domain)s/%(cascaded_ip)s" \
                   % {"cascaded_domain": self.install_info["cascaded_info"]["domain"],
                      "cascaded_ip": cascaded_api_ip}
-
         try:
             execute_cmd_without_stdout(
                 host= cascading_api_ip,
@@ -522,6 +539,8 @@ class HwsConfig(utils.ConfigUtil):
         except SSHCommandFailure:
             LOG.error("remove dns address error.")
 
+    def remove_cascading_route(self):
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
                 host= cascading_api_ip,
@@ -535,7 +554,7 @@ class HwsConfig(utils.ConfigUtil):
         except SSHCommandFailure:
             LOG.error("remove cascaded route error.")
 
-        # config local_vpn
+    def remove_cascading_vpn_tunnel(self):
         vpn_conn_name = self.install_info["vpn_conn_name"]
         try:
             local_vpn = VPN(self.install_info["cascading_vpn_info"]["external_api_ip"],
@@ -545,6 +564,3 @@ class HwsConfig(utils.ConfigUtil):
             local_vpn.remove_tunnel(vpn_conn_name["tunnel_conn_name"])
         except SSHCommandFailure:
             LOG.error("remove conn error.")
-
-
-

@@ -258,6 +258,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
     def _cloud_uninstall(self):
         self.uninstall_cascaded()
         self.uninstall_vpn()
+        self.installer.block_until_delete_resource_success(self.delete_cascaded_job_id)
+        self.installer.block_until_delete_resource_success(self.delete_vpn_job_id)
         self._uninstall_network()
 
     def _install_cascaded(self):
@@ -321,7 +323,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
 
     def _uninstall_cascaded(self):
         servers = [self.cascaded_server_id]
-        self.installer.delete_vm(servers, True, True)
+        self.delete_cascaded_job_id = self.installer.delete_vm(servers, True, True)
 
     def _install_vpn(self):
         self._alloc_vpn_public_ip()
@@ -345,14 +347,12 @@ class HwsCascadedInstaller(utils.CloudUtil):
                 adminPass=constant.VpnConstant.VPN_ROOT_PWD,
                 security_groups=[self.security_group_id])
 
-
-
     def uninstall_vpn(self):
         self._uninstall_vpn()
 
     def _uninstall_vpn(self):
         servers = [self.vpn_server_id]
-        self.installer.delete_vm(servers, True, True)
+        self.delete_vpn_job_id = self.installer.delete_vm(servers, True, True)
 
     def package_installinfo(self):
         return self.package_hws_access_cloud_info()
@@ -363,6 +363,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         l_region_name = region_name.lower()
         cloud_cascaded_domain = ".".join(
                 [azname, l_region_name + az_tag, domainpostfix])
+        self.cascaded_aggregate = ".".join([azname, l_region_name + az_tag])
         return cloud_cascaded_domain
 
     def package_hws_access_cloud_info(self):
@@ -377,7 +378,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
             "external_api_ip": self.cascaded_external_api_ip,
             "tunnel_bearing_ip": self.cascaded_tunnel_bearing_ip,
             "domain": self._distribute_cloud_domain(
-                     self.cloud_info['region'], self.cloud_info['azname'], "--hws")
+                     self.cloud_info['region'], self.cloud_info['azname'], "--hws"),
+            "aggregate": self.cascaded_aggregate
         }
 
         cascaded_subnets_info = {

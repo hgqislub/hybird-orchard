@@ -14,7 +14,8 @@ LOG = logging.getLogger(__name__)
 
 class CascadedConfiger(object):
     def __init__(self, public_ip_api, api_ip, domain, user, password,
-                 cascading_domain, cascading_api_ip, cascaded_api_subnet_gateway):
+                 cascading_domain, cascading_api_ip, cascaded_api_subnet_gateway,
+                 cascaded_aggregate):
         self.public_ip_api = public_ip_api
         self.api_ip = api_ip
         self.domain = domain
@@ -23,6 +24,7 @@ class CascadedConfiger(object):
         self.cascading_domain = cascading_domain
         self.cascading_api_ip = cascading_api_ip
         self.gateway = cascaded_api_subnet_gateway
+        self.cascaded_aggregate = cascaded_aggregate
 
     def do_config(self):
         start_time = time.time()
@@ -88,6 +90,26 @@ class CascadedConfiger(object):
                 LOG.error("modify cascaded dns address error, cascaded: "
                              "%s, error: %s"
                              % (self.domain, e.format_message()))
+                time.sleep(1)
+
+        LOG.info(
+            "config cascaded dns address success, cascaded: %s"
+            % self.public_ip_api)
+
+        for i in range(3):
+            try:
+                commonutils.execute_cmd_without_stdout(
+                    host=self.public_ip_api,
+                    user=self.user,
+                    password=self.password,
+                    cmd='nova aggregate-update 1 %(pool)s %(aggregate)s'
+                        % {"pool": self.cascaded_aggregate,
+                           "aggregate": self.cascaded_aggregate})
+                break
+            except exception.SSHCommandFailure as e:
+                LOG.error("update cascaded aggregate error, aggregate: "
+                             "%s, error: %s"
+                             % (self.cascaded_aggregate, e.format_message()))
                 time.sleep(1)
 
         LOG.info(

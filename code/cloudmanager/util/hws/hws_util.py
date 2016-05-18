@@ -64,7 +64,7 @@ class HwsInstaller(object):
             LOG.error(result)
             raise UninstallCascadedFailed(current_step="delete cascaded vm")
 
-        return result[RSP_BODY]["server"]
+        return result[RSP_BODY]["job_id"]
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
                 raise_exception=InstallCascadedFailed(
@@ -124,6 +124,18 @@ class HwsInstaller(object):
             raise InstallCascadedFailed(current_step="get job detail")
         return result[RSP_BODY]
 
+    def block_until_delete_resource_success(self, job_id):
+        for i in range(MAX_CHECK_TIMES):
+            result = self.get_job_detail(job_id)
+            status = result[RSP_STATUS]
+            if status == "FAILED":
+                raise InstallCascadedFailed(current_step="delete resource")
+            elif status == "SUCCESS":
+                return
+            else:
+                time.sleep(3)
+        pass
+
     def block_until_create_vm_success(self, job_id):
         server_id = None
         for i in range(MAX_CHECK_TIMES):
@@ -152,7 +164,7 @@ class HwsInstaller(object):
                 nic_id = result['entities']['sub_jobs'][0]["entities"]["nic_id"]
                 break
             else:
-                time.sleep(10)
+                time.sleep(3)
 
         if nic_id is None:
             raise InstallCascadedFailed(current_step="create nic")

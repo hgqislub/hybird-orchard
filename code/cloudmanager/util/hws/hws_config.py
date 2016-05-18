@@ -40,6 +40,7 @@ class HwsConfig(utils.ConfigUtil):
         self.proxy_info = proxy_info
         self.installer = installer
         self.cloud_info = cloud_info
+        pdb.set_trace()
         if proxy_info:
             self.installer.cloud_info_handler.write_proxy(proxy_info)
 
@@ -94,8 +95,8 @@ class HwsConfig(utils.ConfigUtil):
         cloud_vpn_cf.do_config()
 
     def config_vpn(self):
-        #self._config_cascading_vpn()
-        #self._config_cascaded_vpn()
+        self._config_cascading_vpn()
+        self._config_cascaded_vpn()
         pass
 
     def _config_cascading_route(self):
@@ -140,8 +141,8 @@ class HwsConfig(utils.ConfigUtil):
                     retry_time=1, interval=1)    #test api net
 
     def config_route(self):
-        #self._config_cascading_route()
-        #self._config_cascaded_route()
+        self._config_cascading_route()
+        self._config_cascaded_route()
         pass
 
     @staticmethod
@@ -196,7 +197,7 @@ class HwsConfig(utils.ConfigUtil):
                 cascaded_domain=self.install_info["cascaded_info"]["domain"],
                 cascaded_api_ip=self.install_info["cascaded_info"]["external_api_ip"],
                 v2v_gw='1.1.1.1')
-        #cascading_cf.do_config()
+        cascading_cf.do_config()
 
     def config_cascaded(self):
         LOG.info("config cascaded")
@@ -212,12 +213,11 @@ class HwsConfig(utils.ConfigUtil):
                 cascaded_api_subnet_gateway=
                 self.install_info['cascaded_subnets_info']['external_api_gateway_ip'])
 
-        #cascaded_cf.do_config()
+        cascaded_cf.do_config()
 
     def config_proxy(self):
         # config proxy on cascading host
-        #pdb.set_trace()
-        """
+        pdb.set_trace()
         LOG.info("config proxy ...")
         if self.proxy_info is None:
             LOG.info("wait proxy ...")
@@ -233,7 +233,7 @@ class HwsConfig(utils.ConfigUtil):
         self._config_proxy(
                 self.install_info['cascading_info']['external_api_ip'],
                 self.proxy_info)
-        """
+
         pass
 
     @staticmethod
@@ -265,7 +265,7 @@ class HwsConfig(utils.ConfigUtil):
 
     def config_patch(self):
         LOG.info("config patches config ...")
-        #pdb.set_trace()
+        pdb.set_trace()
 
         cascaded_public_ip = self.install_info["cascaded_info"]['tunnel_bearing_ip']
 
@@ -292,8 +292,10 @@ class HwsConfig(utils.ConfigUtil):
 
     def _config_patch_tools(self, host_ip, user, passwd,
                             cascaded_domain, proxy_info, install_info):
+        LOG.info("config patches tools  ...")
         for i in range(10):
             try:
+                pdb.set_trace()
                 execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
                      cmd='cd %(dis)s; sh %(script)s '
@@ -320,6 +322,7 @@ class HwsConfig(utils.ConfigUtil):
         return True
 
     def _config_hws(self,host_ip, user, passwd):
+        LOG.info("config hws /etc/nova/nova.json ...")
         pdb.set_trace()
         for i in range(5):
             try:
@@ -376,6 +379,8 @@ class HwsConfig(utils.ConfigUtil):
 
     @staticmethod
     def _deploy_patches(host_ip, user, passwd):
+        LOG.info("deploy patches ...")
+        pdb.set_trace()
         execute_cmd_without_stdout(
             host=host_ip, user=user, password=passwd,
             cmd='cd %s; python config.py cascading'
@@ -384,6 +389,8 @@ class HwsConfig(utils.ConfigUtil):
     
     @staticmethod
     def _start_hws_gateway(host_ip, user, passwd):
+        LOG.info("start hws java gateway ...")
+        pdb.set_trace()
         execute_cmd_without_stdout(
                     host=host_ip, user=user, password=passwd,
                     cmd='cd %(dis)s; sh %(script)s '
@@ -515,6 +522,19 @@ class HwsConfig(utils.ConfigUtil):
         except SSHCommandFailure:
             LOG.error("remove dns address error.")
 
+        try:
+            execute_cmd_without_stdout(
+                host= cascading_api_ip,
+                user=constant.Cascading.ROOT,
+                password=constant.Cascading.ROOT_PWD,
+                cmd='ip route del %(tunnel_route)s; ip route del %(api_route)s;'
+                    % {"tunnel_route":
+                           self.install_info["cascaded_subnets_info"]["tunnel_bearing"],
+                       "api_route":
+                           self.install_info["cascaded_subnets_info"]["external_api"]})
+        except SSHCommandFailure:
+            LOG.error("remove cascaded route error.")
+
         # config local_vpn
         vpn_conn_name = self.install_info["vpn_conn_name"]
         try:
@@ -525,4 +545,6 @@ class HwsConfig(utils.ConfigUtil):
             local_vpn.remove_tunnel(vpn_conn_name["tunnel_conn_name"])
         except SSHCommandFailure:
             LOG.error("remove conn error.")
+
+
 

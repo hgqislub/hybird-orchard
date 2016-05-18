@@ -13,7 +13,7 @@ from cloudmanager.commonutils import *
 RSP_STATUS = "status"
 RSP_BODY = "body"
 RSP_STATUS_OK = "2"
-MAX_RETRY = 10
+MAX_RETRY = 50
 
 #unit=second
 SLEEP_TIME = 60
@@ -192,6 +192,7 @@ class HwsInstaller(object):
             bandwidth["name"]="vpn_public_ip"
             bandwidth["size"]=100
             bandwidth["share_type"]="PER"
+            bandwidth["charge_mode"]= "traffic"
             result = self.hws_client.vpc.create_public_ip(self.project_id, publicip, bandwidth)
             status = str(result[RSP_STATUS])
             if not status.startswith(RSP_STATUS_OK):
@@ -244,6 +245,7 @@ class HwsInstaller(object):
         raise_exception=InstallCascadedFailed(
         current_step="get_external_api_port_id"))
     def get_external_api_port_id(self, server_id, external_api_nic_id):
+        pdb.set_trace()
         result = self.hws_client.ecs.get_nic_info(self.project_id, server_id, external_api_nic_id)
         status = str(result[RSP_STATUS])
         if not status.startswith(RSP_STATUS_OK):

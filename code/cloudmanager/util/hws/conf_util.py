@@ -89,7 +89,7 @@ class CloudInfoHandler:
             if self.cloud_id in cloud_dict.keys():
                 return cloud_dict[self.cloud_id]
         except Exception as e:
-            LOG.error("read vcloud access cloud error, cloud_id: %s, error: %s"
+            LOG.error("read hws access cloud error, cloud_id: %s, error: %s"
                          % (self.cloud_id, e.message))
         finally:
             self._file_lock.release()
@@ -102,7 +102,7 @@ class CloudInfoHandler:
                 cloud_dict.pop(self.cloud_id)
             write_conf(self.file_path, cloud_dict)
         except Exception as e:
-            LOG.error("delete vcloud access cloud error, cloud_id: %s, error: %s"
+            LOG.error("delete hws access cloud error, cloud_id: %s, error: %s"
                          % (self.cloud_id, e.message))
         finally:
             self._file_lock.release()

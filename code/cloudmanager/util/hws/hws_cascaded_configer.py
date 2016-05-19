@@ -69,7 +69,6 @@ class CascadedConfiger(object):
 
     def _config_az_cascaded(self):
         LOG.info("start config cascaded host, host: %s" % self.api_ip)
-        pdb.set_trace()
         # modify dns server address
         address = "/%(cascading_domain)s/%(cascading_ip)s" \
                   % {"cascading_domain": self.cascading_domain,

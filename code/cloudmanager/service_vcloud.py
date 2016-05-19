@@ -173,17 +173,11 @@ class SubCloud(object):
 
     def register_cloud(self):
         self.configer.config_vpn()
-        pdb.set_trace()
         self.configer.config_cascading()
-        pdb.set_trace()
         self.configer.config_cascaded()
-        pdb.set_trace()
         self.configer.config_route()
-        pdb.set_trace()
         self.configer.config_proxy()
-        pdb.set_trace()
         self.configer.config_patch()
-        pdb.set_trace()
         self.configer.config_storge()
         #self.configer.config_extnet()
 

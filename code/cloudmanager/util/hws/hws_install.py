@@ -39,8 +39,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
     def __init__(self, cloud_params):
         self._init_params(cloud_params)
         self._read_env()
-        #start_hws_gateway(self.cascading_api_ip, constant.Cascading.ROOT,
-        #                   constant.Cascading.ROOT_PWD)
+        start_hws_gateway(self.cascading_api_ip, constant.Cascading.ROOT,
+                           constant.Cascading.ROOT_PWD)
         self._read_vpc_conf()
         self._read_install_conf()
         self._read_access_cloud_install_info()
@@ -119,8 +119,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
 
         self.security_group_id = self.installer.get_security_group(self.vpc_id)
 
-        #self.installer.create_security_group_rule(
-        #        self.security_group_id, "ingress", "IPv4")
+        self.installer.create_security_group_rule(
+                self.security_group_id, "ingress", "IPv4")
 
         self.install_data_handler.write_vpc_info(self.vpc_id, name, cidr)
 
@@ -198,7 +198,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
         return cascaded_ip
     
     def _alloc_vpn_public_ip(self):
-        pdb.set_trace()
         if self.vpn_public_ip_id is None:
             result = self.installer.alloc_public_ip()
             self.vpn_public_ip = result["public_ip_address"]
@@ -210,7 +209,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
                 )
 
     def _alloc_cascaded_public_ip(self):
-        pdb.set_trace()
         if self.cascaded_public_ip_id is None:
             result = self.installer.alloc_public_ip()
             self.cascaded_public_ip = result["public_ip_address"]
@@ -263,7 +261,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._uninstall_network()
 
     def _install_cascaded(self):
-        pdb.set_trace()
         self.cascaded_internal_base_ip = self._alloc_cascaded_ip(self.internal_base_cidr, "12")
         self.cascaded_tunnel_bearing_ip = self._alloc_cascaded_ip(self.tunnel_bearing_cidr, "4")
         self.cascaded_external_api_ip = self._alloc_cascaded_ip(self.external_api_cidr, "4")
@@ -278,7 +275,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
                                   "hgq_cascaded", self.vpc_id,
                                   nics,ROOT_VOLUME_TYPE,
                                   self.availability_zone,
-                                  adminPass = constant.Cascaded.ROOT_PWD,
+                                  adminPass = constant.HwsConstant.ROOT_PWD,
                                   security_groups = security_groups)
             self.cascaded_server_id = self.installer.block_until_create_vm_success(self.cascaded_server_job_id)
             self._create_cascaded_nics()
@@ -296,28 +293,27 @@ class HwsCascadedInstaller(utils.CloudUtil):
 
     def _create_cascaded_nics(self):
         ##nic should add one by one to maintain right sequence
-        pdb.set_trace()
         security_groups = [{"id":self.security_group_id}]
-        """
+
         job_id = self.installer.add_nics(self.cascaded_server_id, self.internal_base_id,
                                 security_groups, self.cascaded_internal_base_ip)
         self.installer.block_until_create_nic_success(job_id)
         job_id = self.installer.add_nics(self.cascaded_server_id, self.external_api_id,
                                 security_groups, self.cascaded_external_api_ip)
         external_api_nic_id = self.installer.block_until_create_nic_success(job_id)
-"""
-        external_api_nic_id = "b2bf279d-139d-4479-bdf3-5e2e9c860bdb"
+
+        #external_api_nic_id = "b2bf279d-139d-4479-bdf3-5e2e9c860bdb"
         external_port_id = self.installer.get_external_api_port_id(
                 self.cascaded_server_id, external_api_nic_id)
         self._alloc_cascaded_public_ip()
         self.installer.bind_public_ip(self.cascaded_public_ip_id, external_port_id)
-        """
+
         job_id = self.installer.add_nics(self.cascaded_server_id, self.tunnel_bearing_id,
                                 security_groups, self.cascaded_tunnel_bearing_ip)
         self.installer.block_until_create_nic_success(job_id)
 
         self.installer.reboot(self.cascaded_server_id, "SOFT")
-"""
+
     def uninstall_cascaded(self):
         self._uninstall_cascaded()
 
@@ -339,7 +335,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         if self.vpn_server_id is None:
             self.vpn_server_job_id = self.installer.create_vm(
                 self.vpn_image,
-                self.vpn_flavor, "hgq_hws_cascaded_vpn",
+                self.vpn_flavor, "hgq_cascaded_vpn",
                 self.vpc_id, nics,
                 ROOT_VOLUME_TYPE,
                 self.availability_zone,
@@ -437,6 +433,9 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self.cascaded_public_ip_id = None
         self.vpn_public_ip_id = None
         cloud_info = self.install_data_handler.read_cloud_info()
+        if cloud_info is None:
+            return
+
         if "vpc" in cloud_info.keys():
             self.vpc_id = cloud_info["vpc"]["id"]
         if "subnets" in cloud_info.keys():

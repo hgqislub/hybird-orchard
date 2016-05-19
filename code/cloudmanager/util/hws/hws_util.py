@@ -33,7 +33,6 @@ def start_hws_gateway(host_ip, user, passwd):
 
 class HwsInstaller(object):
     def __init__(self, cloud_info):
-        pdb.set_trace()
         self.hws_client = HWSClient(cloud_info)
         self.project_id = cloud_info["project_id"]
 
@@ -257,7 +256,6 @@ class HwsInstaller(object):
         raise_exception=InstallCascadedFailed(
         current_step="get_external_api_port_id"))
     def get_external_api_port_id(self, server_id, external_api_nic_id):
-        pdb.set_trace()
         result = self.hws_client.ecs.get_nic_info(self.project_id, server_id, external_api_nic_id)
         status = str(result[RSP_STATUS])
         if not status.startswith(RSP_STATUS_OK):

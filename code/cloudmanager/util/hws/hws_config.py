@@ -40,7 +40,6 @@ class HwsConfig(utils.ConfigUtil):
         self.proxy_info = proxy_info
         self.installer = installer
         self.cloud_info = cloud_info
-        pdb.set_trace()
         if proxy_info:
             self.installer.cloud_info_handler.write_proxy(proxy_info)
 
@@ -219,7 +218,6 @@ class HwsConfig(utils.ConfigUtil):
 
     def config_proxy(self):
         # config proxy on cascading host
-        pdb.set_trace()
         LOG.info("config proxy ...")
         if self.proxy_info is None:
             LOG.info("wait proxy ...")
@@ -282,11 +280,11 @@ class HwsConfig(utils.ConfigUtil):
                 host_ip=cascaded_public_ip,
                 user=constant.HwsConstant.ROOT,
                 passwd=constant.HwsConstant.ROOT_PWD)
-        """
+
         self._deploy_patches(self.install_info['cascading_info']['external_api_ip'],
                              user=constant.Cascading.ROOT,
                              passwd=constant.Cascading.ROOT_PWD)
-        """
+
         self._start_hws_gateway(self.install_info["cascaded_info"]["public_ip"],
                                 constant.HwsConstant.ROOT,
                                 constant.HwsConstant.ROOT_PWD)

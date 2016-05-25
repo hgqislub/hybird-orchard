@@ -182,7 +182,7 @@ class HwsInstaller(object):
     @RetryDecorator(max_retry_count=MAX_RETRY,
         raise_exception=InstallCascadedFailed(
         current_step="get free public ip"))
-    def alloc_public_ip(self):
+    def alloc_public_ip(self, name):
         result = self.hws_client.vpc.list_public_ips(self.project_id)
         status = str(result[RSP_STATUS])
         if not status.startswith(RSP_STATUS_OK):
@@ -200,7 +200,7 @@ class HwsInstaller(object):
             publicip = dict()
             bandwidth = dict()
             publicip["type"]="5_bgp"
-            bandwidth["name"]="vpn_public_ip"
+            bandwidth["name"]=name
             bandwidth["size"]=100
             bandwidth["share_type"]="PER"
             bandwidth["charge_mode"]= "traffic"

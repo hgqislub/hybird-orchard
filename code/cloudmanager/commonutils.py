@@ -17,6 +17,8 @@ LOG = logging.getLogger(__name__)
 
 def check_host_status(host, user, password, retry_time=100, interval=1):
     LOG.info("check host status, host: %s" % host)
+    if host is None:
+        raise SSHCommandFailure(host=host, command=cmd, error="host is None")
     ssh = sshclient.SSH(host=host, user=user, password=password)
     for i in range(retry_time):
         try:
@@ -32,6 +34,8 @@ def check_host_status(host, user, password, retry_time=100, interval=1):
 
 def execute_cmd_without_stdout(host, user, password, cmd):
     LOG.debug("execute ssh command, host = %s, cmd = %s" % (host, cmd))
+    if host is None:
+        raise SSHCommandFailure(host=host, command=cmd, error="host is None")
     ssh = sshclient.SSH(host=host, user=user, password=password)
     try:
         operate_result = ssh.execute(cmd)
@@ -55,6 +59,8 @@ def execute_cmd_without_stdout(host, user, password, cmd):
 
 def execute_cmd_with_stdout(host, user, password, cmd):
     LOG.debug("execute ssh command, host = %s, cmd = %s" % (host, cmd))
+    if host is None:
+        raise SSHCommandFailure(host=host, command=cmd, error="host is None")
     ssh = sshclient.SSH(host=host, user=user, password=password)
     try:
         operate_result = ssh.execute(cmd)

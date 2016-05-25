@@ -101,7 +101,8 @@ class CascadedConfiger(object):
                     host=self.public_ip_api,
                     user=self.user,
                     password=self.password,
-                    cmd='nova aggregate-update 1 %(pool)s %(aggregate)s'
+                    cmd='source /root/adminrc;'
+                        'nova aggregate-update 1 %(pool)s %(aggregate)s'
                         % {"pool": self.cascaded_aggregate,
                            "aggregate": self.cascaded_aggregate})
                 break
@@ -115,29 +116,6 @@ class CascadedConfiger(object):
             "config cascaded dns address success, cascaded: %s"
             % self.public_ip_api)
 
-        for i in range(30):
-            try:
-                commonutils.execute_cmd_without_stdout(
-                    host=self.public_ip_api,
-                    user=constant.VcloudConstant.ROOT,
-                    password=constant.VcloudConstant.ROOT_PWD,
-                    cmd='cd %(dir)s; source /root/adminrc;python %(script)s '
-                        '%(cascading_domain)s %(cascading_api_ip)s '
-                        '%(cascaded_domain)s %(cascaded_ip)s '
-                        '%(gateway)s'
-                        % {"dir": constant.Cascaded.REMOTE_VCLOUD_SCRIPTS_DIR,
-                           "script":
-                               constant.Cascaded.MODIFY_CASCADED_SCRIPT_PY,
-                           "cascading_domain": self.cascading_domain,
-                           "cascading_api_ip": self.cascading_api_ip,
-                           "cascaded_domain": self.domain,
-                           "cascaded_ip": self.api_ip,
-                           "gateway": self.gateway})
-                break
-            except exception.SSHCommandFailure as e:
-                LOG.error("modify cascaded domain error: %s"
-                             % e.message)
-                time.sleep(5)
         return True
 
 

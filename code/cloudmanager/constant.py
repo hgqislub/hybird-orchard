@@ -24,6 +24,7 @@ class VpnConstant(object):
     REMOVE_TUNNEL_SCRIPT = "remove_tunnel.sh"
     REMOTE_ROUTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/vpn/"
     ADD_VPN_ROUTE_SCRIPT = "add_vpn_route.sh"
+    MODIFY_CASCADED_API_SCRIPT = "modify_cascaded_api.py"
 
 class Cascaded(object):
     ROOT = "root"
@@ -55,6 +56,10 @@ class Cascading(object):
     KEYSTONE_ENDPOINT_SCRIPT = "create_keystone_endpoint.sh"
     ENABLE_OPENSTACK_SERVICE = "enable_openstack_service.sh"
     UPDATE_PROXY_PARAMS = "modify_proxy_params.sh"
+
+class AfterRebootConstant(object):
+    REMOTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/after_reboot/"
+    ADD_ROUTE_SCRIPT = "add_vpn_route.sh"
 
 
 class PatchesConstant(object):

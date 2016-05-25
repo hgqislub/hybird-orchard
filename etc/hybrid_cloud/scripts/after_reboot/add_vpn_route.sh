@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+dir=`cd "$(dirname "$0")"; pwd`
+dir=${dir}/add_vpn_route
+
+mkdir -p ${dir}
+
+cloud_id=${5}
+
+RUN_SCRIPT=${dir}/add_vpn_route_${cloud_id}.sh
+RUN_LOG=${dir}/add_vpn_route_${cloud_id}.log
+
+openstack_api_subnet=${1}
+aws_api_gw=${2}
+openstack_tunnel_subnet=${3}
+aws_tunnel_gw=${4}
+
+echo "#!/usr/bin/env bash" > ${RUN_SCRIPT}
+echo "ip route show | grep ${openstack_api_subnet} && ip route del ${openstack_api_subnet}" >> ${RUN_SCRIPT}
+echo "ip route show | grep ${openstack_tunnel_subnet} && ip route del ${openstack_tunnel_subnet}" >> ${RUN_SCRIPT}
+
+echo "ip route add ${openstack_api_subnet} via ${aws_api_gw}" >> ${RUN_SCRIPT}
+echo "ip route add ${openstack_tunnel_subnet} via ${aws_tunnel_gw}" >> ${RUN_SCRIPT}
+
+echo "ip route show table external_api | grep ${openstack_api_subnet} && ip route del table external_api ${openstack_api_subnet}" >> ${RUN_SCRIPT}
+echo "ip route add table external_api ${openstack_api_subnet} via ${aws_api_gw}" >> ${RUN_SCRIPT}

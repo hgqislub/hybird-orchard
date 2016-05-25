@@ -91,6 +91,7 @@ class CloudInfoHandler:
         except Exception as e:
             LOG.error("read hws access cloud error, cloud_id: %s, error: %s"
                          % (self.cloud_id, e.message))
+            return None
         finally:
             self._file_lock.release()
 

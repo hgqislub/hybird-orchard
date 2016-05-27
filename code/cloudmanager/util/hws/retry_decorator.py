@@ -16,7 +16,7 @@ class RetryDecorator(object):
     """
 
     def __init__(self, max_retry_count=0, init_sleep_time=1,
-                 inc_sleep_time=1, max_sleep_time=60,
+                 inc_sleep_time=0, max_sleep_time=60,
                  catch_exceptions=Exception,
                  raise_exception=None):
         """Configure the retry object using the input params.

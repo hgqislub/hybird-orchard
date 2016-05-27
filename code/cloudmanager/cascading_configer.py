@@ -58,6 +58,17 @@ class CascadingConfiger(object):
                     user=self.user,
                     password=self.password,
                     cmd='cd %(dir)s;'
+                        'sh %(script)s %(cascaded_domain)s'
+                        % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
+                           "script":
+                               constant.RemoveConstant.REMOVE_KEYSTONE_SCRIPT,
+                           "cascaded_domain": self.cascaded_domain})
+
+                commonutils.execute_cmd_without_stdout(
+                    host=self.cascading_ip,
+                    user=self.user,
+                    password=self.password,
+                    cmd='cd %(dir)s;'
                         'sh %(script)s %(cascaded_domain)s %(v2v_gw)s'
                         % {"dir": constant.Cascading.REMOTE_SCRIPTS_DIR,
                            "script":

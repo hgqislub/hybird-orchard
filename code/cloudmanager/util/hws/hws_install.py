@@ -47,7 +47,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
 
     def _init_params(self, cloud_params):
         self.cloud_info = cloud_params
-        self.cloud_id = "@".join(["HWS", cloud_params['project_id'], cloud_params['azname']])
+        self.cloud_id = "@".join(["HWS", cloud_params['azname']])
         self.installer = HwsInstaller(cloud_params)
         self.availability_zone = cloud_params["availability_zone"]
         self.install_data_handler = HwsCloudInfoPersist(_access_cloud_install_info_file, self.cloud_id)
@@ -127,7 +127,8 @@ class HwsCascadedInstaller(utils.CloudUtil):
             self.install_data_handler.write_vpc_info(self.vpc_id, name, cidr, self.security_group_id)
 
     def _delete_vpc(self):
-        self.installer.delete_vpc(self.vpc_id)
+        if self.vpc_id:
+            self.installer.delete_vpc(self.vpc_id)
 
     def _create_subnet(self):
         az = self.cloud_info["availability_zone"]
@@ -194,10 +195,14 @@ class HwsCascadedInstaller(utils.CloudUtil):
             self.install_data_handler.write_subnets_info(external_api_info, tunnel_bearing_info, internal_base_info, debug_info)
 
     def _delete_subnet(self):
-        self.installer.delete_subnet(self.external_api_id)
-        self.installer.delete_subnet(self.tunnel_bearing_id)
-        self.installer.delete_subnet(self.internal_base_id)
-        self.installer.delete_subnet(self.debug_id)
+        if self.external_api_id:
+            self.installer.delete_subnet(self.vpc_id, self.external_api_id)
+        if self.tunnel_bearing_id:
+            self.installer.delete_subnet(self.vpc_id, self.tunnel_bearing_id)
+        if self.internal_base_id:
+            self.installer.delete_subnet(self.vpc_id, self.internal_base_id)
+        if self.debug_id:
+            self.installer.delete_subnet(self.vpc_id, self.debug_id)
 
     @staticmethod
     def _alloc_gateway_ip(cidr):
@@ -261,8 +266,9 @@ class HwsCascadedInstaller(utils.CloudUtil):
         pass
 
     def cloud_postuninstall(self):
-        self.install_data_handler.delete_cloud_info()
-        self.cloud_info_handler.delete_cloud_info()
+        pdb.set_trace()
+        #self.install_data_handler.delete_cloud_info()
+        #self.cloud_info_handler.delete_cloud_info()
 
     def cloud_install(self):
         self._cloud_install()
@@ -272,14 +278,17 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._install_cascaded()
 
     def cloud_uninstall(self):
-        #self._cloud_uninstall()
+        self._cloud_uninstall()
         pass
 
     def _cloud_uninstall(self):
+        pdb.set_trace()
         self.uninstall_cascaded()
         self.uninstall_vpn()
-        self.installer.block_until_delete_resource_success(self.delete_cascaded_job_id)
-        self.installer.block_until_delete_resource_success(self.delete_vpn_job_id)
+        if self.delete_cascaded_job_id:
+            self.installer.block_until_delete_resource_success(self.delete_cascaded_job_id)
+        if self.delete_vpn_job_id:
+            self.installer.block_until_delete_resource_success(self.delete_vpn_job_id)
         self._uninstall_network()
 
     def _install_cascaded(self):
@@ -335,7 +344,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
                                 security_groups, self.cascaded_tunnel_bearing_ip)
             self.tunnel_bearing_nic_id = self.installer.block_until_create_nic_success(job_id)
         if self.port_id_bind_public_ip is None:
-            pdb.set_trace()
+            #pdb.set_trace()
             external_api_port_id = self.installer.get_external_api_port_id(
                 self.cascaded_server_id, self.external_api_nic_id)
             self._alloc_cascaded_public_ip()
@@ -348,6 +357,9 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._uninstall_cascaded()
 
     def _uninstall_cascaded(self):
+        if self.cascaded_server_id is None:
+            self.delete_cascaded_job_id = None
+            return
         servers = [self.cascaded_server_id]
         self.delete_cascaded_job_id = self.installer.delete_vm(servers, True, True)
 
@@ -378,6 +390,9 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._uninstall_vpn()
 
     def _uninstall_vpn(self):
+        if self.vpn_server_id is None:
+            self.delete_vpn_job_id = None
+            return
         servers = [self.vpn_server_id]
         self.delete_vpn_job_id = self.installer.delete_vm(servers, True, True)
 
@@ -443,7 +458,10 @@ class HwsCascadedInstaller(utils.CloudUtil):
             "tunnel_conn_name": self.cloud_id + '-tunnel'
         }
         proxy_info = self.cloud_info_handler.read_proxy()
-        info = {"cascaded_vpn_info":cascaded_vpn_info,
+        #pdb.set_trace()
+        info = {"cloud_id": self.cloud_id,
+                "access": self.cloud_info["access"],
+                "cascaded_vpn_info":cascaded_vpn_info,
                 "cascading_vpn_info":cascading_vpn_info,
                 "cascaded_info": cascaded_info,
                 "cascading_info":cascading_info,
@@ -475,6 +493,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         cloud_info = self.install_data_handler.read_cloud_info()
 
         if cloud_info is None:
+            pdb.set_trace()
             return
 
         if "vpc" in cloud_info.keys():

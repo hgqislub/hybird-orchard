@@ -59,6 +59,7 @@ class Cascading(object):
 
 class AfterRebootConstant(object):
     REMOTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/after_reboot/"
+    REMOTE_ROUTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/after_reboot/add_vpn_route"
     ADD_ROUTE_SCRIPT = "add_vpn_route.sh"
 
 
@@ -80,6 +81,7 @@ class RemoveConstant(object):
     REMOVE_AGGREGATE_SCRIPT = "remove_aggregate.sh"
     REMOVE_CINDER_SERVICE_SCRIPT = "remove_cinder_service.sh"
     REMOVE_NEUTRON_AGENT_SCRIPT = "remove_neutron_agent.sh"
+    REMOVE_ROUTE_SCRIPT = "remove_route.sh"
 
 
 class CephConstant(object):

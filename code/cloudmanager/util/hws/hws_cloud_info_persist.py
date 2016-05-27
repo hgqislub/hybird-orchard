@@ -73,3 +73,12 @@ class HwsCloudInfoPersist:
 
     def delete_cloud_info(self):
         self.info_handler.delete_cloud_info()
+
+    def list_all_cloud_id(self):
+        all_cloud = self.info_handler.get_all_unit_info()
+        return all_cloud.keys()
+
+    def get_cloud_info_with_id(self, cloud_id):
+        all_cloud = self.info_handler.get_all_unit_info()
+        if cloud_id in all_cloud.keys():
+            return all_cloud[cloud_id]

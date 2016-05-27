@@ -167,6 +167,7 @@ class HwsInstaller(object):
 
         if nic_id is None:
             raise InstallCascadedFailed(current_step="create nic")
+        return nic_id
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
         raise_exception=InstallCascadedFailed(

@@ -14,7 +14,8 @@ LOG = logging.getLogger(__name__)
 
 class CascadedConfiger(object):
     def __init__(self, public_ip_api, api_ip, domain, user, password,
-                 cascading_domain, cascading_api_ip, cascaded_api_subnet_gateway):
+                 cascading_domain, cascading_api_ip, cascaded_domain,
+                 cascaded_api_ip, cascaded_api_subnet_gateway):
         self.public_ip_api = public_ip_api
         self.api_ip = api_ip
         self.domain = domain
@@ -22,6 +23,8 @@ class CascadedConfiger(object):
         self.password = password
         self.cascading_domain = cascading_domain
         self.cascading_api_ip = cascading_api_ip
+        self.cascaded_domain = cascaded_domain
+        self.cascaded_ip = cascaded_api_ip
         self.gateway = cascaded_api_subnet_gateway
 
     def do_config(self):
@@ -68,16 +71,18 @@ class CascadedConfiger(object):
     def _config_az_cascaded(self):
         LOG.info("start config cascaded host, host: %s" % self.api_ip)
         # modify dns server address
-        address = "/%(cascading_domain)s/%(cascading_ip)s" \
+        address = "/%(cascading_domain)s/%(cascading_ip)s,/%(cascaded_domain)s/%(cascaded_ip)s" \
                   % {"cascading_domain": self.cascading_domain,
-                     "cascading_ip": self.cascading_api_ip}
+                     "cascading_ip": self.cascading_api_ip,
+                     "cascaded_domain":self.cascaded_domain,
+                     "cascaded_ip":self.cascaded_ip}
         for i in range(3):
             try:
                 commonutils.execute_cmd_without_stdout(
                     host=self.public_ip_api,
                     user=self.user,
                     password=self.password,
-                    cmd='cd %(dir)s; sh %(script)s add %(address)s'
+                    cmd='cd %(dir)s; sh %(script)s replace %(address)s'
                         % {"dir": constant.PublicConstant.SCRIPTS_DIR,
                            "script": constant.PublicConstant.
                                MODIFY_DNS_SERVER_ADDRESS,

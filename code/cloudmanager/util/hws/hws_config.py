@@ -255,7 +255,7 @@ class HwsConfig(utils.ConfigUtil):
                        "cascaded_ip": self.install_info["cascaded_info"]["external_api_ip"],
                        "gateway": self.install_info['cascaded_subnets_info']['external_api_gateway_ip']}
         #pdb.set_trace()
-        for i in range(500):
+        for i in range(100):
             try:
                 execute_cmd_without_stdout(
                     host= self.install_info["cascaded_vpn_info"]["public_ip"],
@@ -271,7 +271,8 @@ class HwsConfig(utils.ConfigUtil):
                        "cmd": modify_cascaded_api_domain_cmd})
                 return True
             except Exception:
-                time.sleep(3)
+                #wait cascaded vm to reboot ok
+                time.sleep(10)
                 continue
         LOG.error("modify cascaded=%s external_api ip and domain error"
                   % self.install_info["cascaded_info"]["tunnel_bearing_ip"])
@@ -368,6 +369,8 @@ class HwsConfig(utils.ConfigUtil):
                 password = constant.HwsConstant.ROOT_PWD,
                 cascading_domain = self.install_info['cascading_info']['domain'],
                 cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"],
+                cascaded_domain = self.install_info['cascaded_info']['domain'],
+                cascaded_api_ip = self.install_info["cascaded_info"]["external_api_ip"],
                 cascaded_api_subnet_gateway=
                 self.install_info['cascaded_subnets_info']['external_api_gateway_ip']
         )

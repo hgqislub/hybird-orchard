@@ -9,12 +9,11 @@ from heat.openstack.common import log as logging
 import cloud_util as utils
 from cloudmanager.exception import *
 from cloudmanager.environmentinfo import *
-import json
-from cloudmanager.subnet_manager import SubnetManager
 from hws_util import *
 from hws_cloud_info_persist import *
 import cloudmanager.constant as constant
 from hws_cloudinfo import HwsCloudInfo
+from cloud_manager.proxy_manager import proxy_manager as proxy_manager
 import pdb
 
 LOG = logging.getLogger(__name__)
@@ -25,17 +24,13 @@ _install_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_access_cloud_install.conf')
 _vpc_conf = os.path.join("/home/hybrid_cloud/conf/hws/",
                              'hws_vpc.conf')
-_access_cloud_install_info_file = os.path.join("/home/hybrid_cloud/data/hws/",
-                             'hws_access_cloud_install.data')
-_access_cloud_info_file = os.path.join("/home/hybrid_cloud/data/hws/",
-                             'hws_access_cloud.data')
 
 SUBNET_GATEWAY_TAIL_IP = "1"
 VPN_TAIL_IP = "254"
 CASCADED_TAIL_IP = "4"
 ROOT_VOLUME_TYPE = 'SATA'
 
-class HwsCascadedInstaller(utils.CloudUtil):
+class HwsCascadedInstaller():
     def __init__(self, cloud_params):
         self._init_params(cloud_params)
         self._read_env()
@@ -50,8 +45,10 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self.cloud_id = "@".join(["HWS", cloud_params['azname']])
         self.installer = HwsInstaller(cloud_params)
         self.availability_zone = cloud_params["availability_zone"]
-        self.install_data_handler = HwsCloudInfoPersist(_access_cloud_install_info_file, self.cloud_id)
-        self.cloud_info_handler = HwsCloudInfoPersist(_access_cloud_info_file, self.cloud_id)
+        self.install_data_handler = \
+            HwsCloudInfoPersist(constant.HwsConstant.INSTALL_INFO_FILE, self.cloud_id)
+        self.cloud_info_handler = \
+            HwsCloudInfoPersist(constant.HwsConstant.CLOUD_INFO_FILE, self.cloud_id)
 
     def _read_env(self):
         try:
@@ -274,6 +271,7 @@ class HwsCascadedInstaller(utils.CloudUtil):
         self._cloud_install()
 
     def _cloud_install(self):
+        self.proxy_info = proxy_manager.distribute_proxy()
         self._install_vpn()
         self._install_cascaded()
 

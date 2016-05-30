@@ -5,14 +5,10 @@ sys.path.append('..')
 import os
 import pdb
 from heat.openstack.common import log as logging
-import util.vcloud.vcloud_install as vcloudinstaller
-import util.hws.hws_install as hws_installer
-import util.hws.hws_cloudinfo as hws_cloudinfo
-import util.hws.hws_config as hws_config
+import cloud.vcloud.vcloud_install as vcloudinstaller
 
-import util.vcloud.vcloud_cloudinfo as vcloudcloudinfo
-import util.vcloud.vcloud_config as vcloudconfiger
-from util.vcloud.vcloudcloudpersist import VcloudCloudDataHandler
+import cloud.vcloud.vcloud_cloudinfo as vcloudcloudinfo
+import cloud.vcloud.vcloud_config as vcloudconfiger
 
 
 #from subnet_manager import SubnetManager
@@ -132,10 +128,6 @@ class SubCloud(object):
             self.installer = vcloudinstaller.VcloudCloudInstaller(cloud_params=cloud_params)
             self.configer = vcloudconfiger.VcloudCloudConfig()
             self.cloudinfo = vcloudcloudinfo.VcloudCloudInfo()
-        if self.cloud_type == 'HWS':
-            self.installer = hws_installer.HwsCascadedInstaller(cloud_params=cloud_params)
-            self.cloudinfo = hws_cloudinfo.HwsCloudInfo()
-            self.configer = hws_config.HwsConfig()
 
     def cloud_preinstall(self):
         self.installer.cloud_preinstall()

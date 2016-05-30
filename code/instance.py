@@ -18,7 +18,7 @@ import six
 
 from heat.engine.resources.cloudmanager import service
 from heat.engine.resources.cloudmanager import service_vcloud as vcloudservice
-
+from heat.engine.resources.cloudmanager import service_omni as service_omni
 from heat.common import exception
 from heat.common.i18n import _
 from heat.engine import attributes
@@ -1292,7 +1292,7 @@ class HwsCloud(resource.Resource):
         self.cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
         self.cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
 
-        self.cloud_manager = vcloudservice.CloudManager(self.cloud_params)
+        self.cloud_manager = service_omni.CloudManager(self.cloud_params)
         print "This is for adding hws cloud"
 
     def handle_create(self):

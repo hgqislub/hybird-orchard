@@ -126,7 +126,8 @@ class VcloudConstant(object):
 class HwsConstant(object):
     ROOT = "root"
     ROOT_PWD = "Huawei@CLOUD8!"
-
+    CLOUD_INFO_FILE = "/home/hybrid_cloud/data/hws/hws_access_cloud.data"
+    INSTALL_INFO_FILE = "/home/hybrid_cloud/data/hws/hws_access_cloud_install.data"
 
 class AwsConstant(object):
     ROOT = "root"

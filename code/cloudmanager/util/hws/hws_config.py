@@ -18,44 +18,28 @@ from cloudmanager.commonutils import *
 import cloudmanager.exception as exception
 from cloud_manager_exception import *
 from retry_decorator import RetryDecorator
+from hws_cloud_info_persist import *
 
 LOG = logging.getLogger(__name__)
 MAX_RETRY = 10
 class HwsConfig(utils.ConfigUtil):
     def __init__(self):
-        self.local_vpn_thread = None
-        self.cloud_vpn_thread = None
-        self.cascading_thread = None
-        self.cascaded_thread = None
-
         self.install_info = None
         self.proxy_info = None
-        self.installer = None
-        self.cloud_info = None
         self.cloud_params = None
+        self.cloud_info_handler = None
 
-    def initialize(self, cloud_params, install_info, proxy_info, cloud_info, installer):
+    def initialize(self, cloud_params, install_info):
         self.cloud_params = cloud_params
         self.install_info = install_info
-        self.proxy_info = proxy_info
-        self.installer = installer
-        self.cloud_info = cloud_info
-
-        if proxy_info:
-            self.installer.cloud_info_handler.write_proxy(proxy_info)
-        else:
-            #pdb.set_trace()
-            self.proxy_info = self.installer.cloud_info_handler.read_proxy()
-
-
-    def config_vpn_only(self):
-        LOG.info("config cloud vpn only")
-        pass
+        self.proxy_info = self.install_info["proxy_info"]
+        cloud_id = self.install_info["cloud_id"]
+        self.cloud_info_handler = \
+            HwsCloudInfoPersist(constant.HwsConstant.CLOUD_INFO_FILE, cloud_id)
 
     def _config_cascading_vpn(self):
         LOG.info("config local vpn")
         vpn_conn_name = self.install_info["vpn_conn_name"]
-        access = self.cloud_params["access"]
         local_vpn_cf = VpnConfiger(
                 host_ip=self.install_info['cascading_vpn_info']['external_api_ip'],
                 user=constant.VpnConstant.VPN_ROOT,
@@ -380,6 +364,7 @@ class HwsConfig(utils.ConfigUtil):
     def config_proxy(self):
         # config proxy on cascading host
         LOG.info("config proxy ...")
+
         if self.proxy_info is None:
             LOG.info("wait proxy ...")
             self.proxy_info = self._get_proxy_retry()
@@ -415,11 +400,11 @@ class HwsConfig(utils.ConfigUtil):
 
     def _get_proxy_retry(self):
         LOG.info("get proxy retry ...")
-        proxy_info = proxy_manager.distribute_proxy(self.installer)
+        proxy_info = proxy_manager.distribute_proxy()
         for i in range(10):
             if proxy_info is None:
                 time.sleep(240)
-                proxy_info = proxy_manager.distribute_proxy(self.installer)
+                proxy_info = proxy_manager.distribute_proxy()
             else:
                 return proxy_info
         raise exception.ConfigProxyFailure(error="check proxy config result failed")
@@ -556,7 +541,8 @@ class HwsConfig(utils.ConfigUtil):
                              % (cascaded_aggregate, e.format_message()))
                 time.sleep(1)
 
-    def _restart_nova_computer(self, host_ip, user, passwd):
+    @staticmethod
+    def _restart_nova_computer(host_ip, user, passwd):
         execute_cmd_without_stdout(
             host=host_ip, user=user, password=passwd,
             cmd='source /root/adminrc;'
@@ -567,8 +553,8 @@ class HwsConfig(utils.ConfigUtil):
             cmd='source /root/adminrc;'
                 'cps host-template-instance-operate --action start --service nova nova-compute')
 
-
-    def _deploy_patches(self, host_ip, user, passwd):
+    @staticmethod
+    def _deploy_patches(host_ip, user, passwd):
         LOG.info("deploy patches ...")
         try:
             execute_cmd_without_stdout(
@@ -750,12 +736,12 @@ class HwsConfig(utils.ConfigUtil):
 
     def disable_cross_network(self):
         cloud_id = self.install_info["cloud_id"]
-        for other_cloud_id in self.installer.cloud_info_handler.list_all_cloud_id():
+        for other_cloud_id in self.cloud_info_handler.list_all_cloud_id():
             if other_cloud_id == cloud_id:
                 continue
 
             other_cloud = \
-                self.installer.cloud_info_handler.get_cloud_info_with_id(other_cloud_id)
+                self.cloud_info_handler.get_cloud_info_with_id(other_cloud_id)
             if not other_cloud["access"]:
                 continue
 

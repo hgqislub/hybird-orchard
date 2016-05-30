@@ -282,7 +282,6 @@ class HwsCascadedInstaller(utils.CloudUtil):
         pass
 
     def _cloud_uninstall(self):
-        pdb.set_trace()
         self.uninstall_cascaded()
         self.uninstall_vpn()
         if self.delete_cascaded_job_id:

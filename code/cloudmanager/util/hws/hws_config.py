@@ -595,7 +595,7 @@ class HwsConfig(utils.ConfigUtil):
     def _stop_hws_gateway(host_ip, user, password):
         LOG.info("start hws java gateway ...")
         execute_cmd_without_stdout(
-                    host=host_ip, user=user, password=passwd,
+                    host=host_ip, user=user, password=password,
                     cmd='cd %(dis)s; sh %(script)s stop'
                     % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
                         "script":
@@ -802,8 +802,8 @@ class HwsConfig(utils.ConfigUtil):
                 host= cascading_api_ip,
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD,
-                cmd='cd %(dir)s; rm %(script_after_reboot)s;'
-                    'cd %(dir2)s; %(remove_route)s %(tunnel_route)s %(api_route)s;'
+                cmd='cd %(dir)s; rm -f %(script_after_reboot)s;'
+                    'cd %(dir2)s; sh %(remove_route)s %(tunnel_route)s %(api_route)s;'
                     % {"dir":constant.AfterRebootConstant.REMOTE_ROUTE_SCRIPTS_DIR,
                        "script_after_reboot":"add_vpn_route_"+ self.cloud_params["azname"] +".sh",
                        "dir2":constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
@@ -812,8 +812,8 @@ class HwsConfig(utils.ConfigUtil):
                            self.install_info["cascaded_subnets_info"]["tunnel_bearing"],
                        "api_route":
                            self.install_info["cascaded_subnets_info"]["external_api"]})
-        except SSHCommandFailure:
-            LOG.error("remove cascaded route error.")
+        except Exception as e:
+            LOG.error("remove cascaded route error: %s", e.message)
 
     def remove_cascading_vpn_tunnel(self):
         vpn_conn_name = self.install_info["vpn_conn_name"]

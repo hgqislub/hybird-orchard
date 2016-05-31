@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
 
 from hwcloud.hws_service.hws_client import HWSClient
@@ -20,7 +21,7 @@ SLEEP_TIME = 60
 MAX_CHECK_TIMES = 100
 
 LOG = logging.getLogger(__name__)
-import pdb
+
 
 def start_hws_gateway(host_ip, user, passwd):
     execute_cmd_without_stdout(

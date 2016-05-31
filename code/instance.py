@@ -1216,13 +1216,13 @@ class vCloudCloud(resource.Resource):
 
 class HwsCloud(resource.Resource):
     PROPERTIES = (
-        CLOUD_TYPE, AZNAME, PROJECT_ID, ACCESS_KEY, SECRET_KEY,
-        PROTOCOL, PORT, REGION, AVAILABILITY_ZONE, HOST,
-        DRIVER_TYPE, ENABLE_NETWORK_CROSS_CLOUDS
+        CLOUD_TYPE, AZNAME,  DATA_CENTER, PROJECT_INFO,
+        CASCADED, VPN, NETWORK, PROXY,
+        DRIVER_TYPE, ENABLE_NETWORK_CROSS_CLOUDS,EXTRA
     ) = (
-        'CloudType', 'AZName', 'ProjectId', 'AccessKey', 'SecretKey',
-        'Protocol', 'Port', 'Region', 'AvailabilityZone', 'Host',
-        'DriverType', 'EnableNetworkCrossClouds'
+        'CloudType', 'AZName', 'DataCenter','ProjectInfo',
+        'Cascaded', 'Vpn', 'Network', 'Proxy',
+        'DriverType', 'EnableNetworkCrossClouds','Extra'
     )
 
     properties_schema = {
@@ -1234,37 +1234,33 @@ class HwsCloud(resource.Resource):
             properties.Schema.STRING,
             _('Availability zone name of hybrid cloud.')
         ),
-        PROJECT_ID: properties.Schema(
+        DATA_CENTER: properties.Schema(
             properties.Schema.STRING,
-            _('Project id of hws account.')
+            _('data center name.')
         ),
-        ACCESS_KEY: properties.Schema(
-            properties.Schema.STRING,
-            _('Access key of hws account.')
+        PROJECT_INFO: properties.Schema(
+            properties.Schema.MAP,
+            _('project info of hws account.')
         ),
-        SECRET_KEY: properties.Schema(
-            properties.Schema.STRING,
-            _('Secret key of hws account.')
+        CASCADED: properties.Schema(
+            properties.Schema.MAP,
+            _('cascaded info, like image, flavor...')
         ),
-        PROTOCOL: properties.Schema(
-            properties.Schema.STRING,
-            _('Protocol to access hws cloud.')
+        VPN: properties.Schema(
+            properties.Schema.MAP,
+            _('vpn info, like image, flavor...')
         ),
-        PORT: properties.Schema(
-            properties.Schema.STRING,
-            _('Port to access hws cloud.')
+        PROXY: properties.Schema(
+            properties.Schema.MAP,
+            _('proxy info, like image, flavor...')
         ),
-        REGION: properties.Schema(
-            properties.Schema.STRING,
-            _('Region of hws cloud.')
+        NETWORK: properties.Schema(
+            properties.Schema.MAP,
+            _('network info. like vpc, subnet')
         ),
-        AVAILABILITY_ZONE: properties.Schema(
-            properties.Schema.STRING,
-            _('Availability zone of hws cloud.')
-        ),
-        HOST: properties.Schema(
-            properties.Schema.STRING,
-            _('Endpoint host to access hws cloud.')
+        EXTRA: properties.Schema(
+            properties.Schema.MAP,
+            _('something else')
         ),
         DRIVER_TYPE: properties.Schema(
             properties.Schema.STRING,
@@ -1280,15 +1276,14 @@ class HwsCloud(resource.Resource):
         super(HwsCloud, self).__init__(name, json_snippet, stack)
         self.cloud_params = dict()
         self.cloud_params['cloud_type'] = self.properties.get(self.CLOUD_TYPE)
+        self.cloud_params['data_center'] = self.properties.get(self.DATA_CENTER)
         self.cloud_params['azname'] = self.properties.get(self.AZNAME)
-        self.cloud_params['project_id'] = self.properties.get(self.PROJECT_ID)
-        self.cloud_params['ak'] = self.properties.get(self.ACCESS_KEY)
-        self.cloud_params['sk'] = self.properties.get(self.SECRET_KEY)
-        self.cloud_params['protocol'] = self.properties.get(self.PROTOCOL)
-        self.cloud_params['port'] = self.properties.get(self.PORT)
-        self.cloud_params['region'] = self.properties.get(self.REGION)
-        self.cloud_params['availability_zone'] = self.properties.get(self.AVAILABILITY_ZONE)
-        self.cloud_params['host'] = self.properties.get(self.HOST)
+        self.cloud_params['project_info'] = self.properties.get(self.PROJECT_INFO)
+        self.cloud_params['proxy'] = self.properties.get(self.PROXY)
+        self.cloud_params['cascaded_info'] = self.properties.get(self.CASCADED)
+        self.cloud_params['vpn_info'] = self.properties.get(self.VPN)
+        self.cloud_params['network'] = self.properties.get(self.NETWORK)
+        self.cloud_params['extra'] = self.properties.get(self.EXTRA)
         self.cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
         self.cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
 

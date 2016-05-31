@@ -5,10 +5,10 @@ sys.path.append('..')
 import os
 import pdb
 from heat.openstack.common import log as logging
-import cloud.vcloud.vcloud_install as vcloudinstaller
+import install.vcloud.vcloud_install as vcloudinstaller
 
-import cloud.vcloud.vcloud_cloudinfo as vcloudcloudinfo
-import cloud.vcloud.vcloud_config as vcloudconfiger
+import install.vcloud.vcloud_cloudinfo as vcloudcloudinfo
+import install.vcloud.vcloud_config as vcloudconfiger
 
 
 #from subnet_manager import SubnetManager

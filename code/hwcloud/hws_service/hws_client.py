@@ -8,8 +8,8 @@ from hwcloud.hws_service.vbs_service import VBSService
 import pdb
 class HWSClient(object):
     def __init__(self, cloud_info):
-        self.ak = cloud_info['ak']
-        self.sk = cloud_info['sk']
+        self.ak = cloud_info['access_key']
+        self.sk = cloud_info['secret_key']
         self.protocol = cloud_info['protocol']
         self.port = cloud_info['port']
         self.region = cloud_info['region']

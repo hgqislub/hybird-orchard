@@ -1,5 +1,6 @@
-
-from conf_util import *
+import sys
+sys.path.append('..')
+from cloudmanager.util.conf_util import *
 class HwsCloudInfoPersist:
     def __init__(self, _access_cloud_install_info_file, cloud_id):
         self.info_handler = CloudInfoHandler(_access_cloud_install_info_file, cloud_id)

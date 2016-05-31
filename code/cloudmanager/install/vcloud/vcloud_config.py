@@ -5,7 +5,6 @@ sys.path.append('..')
 import os
 import pdb
 from heat.openstack.common import log as logging
-import config_util as utils
 from cloudmanager.vpn_configer import VpnConfiger
 from cloudmanager.vpn import VPN
 import cloudmanager.constant as constant
@@ -21,7 +20,7 @@ import cloudmanager.exception as exception
 
 LOG = logging.getLogger(__name__)
 
-class VcloudCloudConfig(utils.ConfigUtil):
+class VcloudCloudConfig:
     def __init__(self):
         self.local_vpn_thread = None
         self.cloud_vpn_thread = None

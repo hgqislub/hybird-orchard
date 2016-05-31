@@ -32,7 +32,7 @@ def check_host_status(host, user, password, retry_time=100, interval=1):
     raise CheckHostStatusFailure(host=host)
 
 
-def execute_cmd_without_stdout(host, user, password, cmd):
+def do_execute_cmd_without_stdout(host, user, password, cmd):
     LOG.debug("execute ssh command, host = %s, cmd = %s" % (host, cmd))
     if host is None:
         raise SSHCommandFailure(host=host, command=cmd, error="host is None")
@@ -56,8 +56,18 @@ def execute_cmd_without_stdout(host, user, password, cmd):
         raise SSHCommandFailure(
             host=ssh.host, command=cmd, error=operate_result[2])
 
+def execute_cmd_without_stdout(host, user, password, cmd, retry_time=1, interval=1):
+    for i in range(retry_time):
+        try:
+            do_execute_cmd_without_stdout(host, user, password, cmd)
+            return True
+        except Exception:
+            time.sleep(interval)
+            continue
+    LOG.error("execute ssh command failed, host = % s" % host)
+    raise CheckHostStatusFailure(host=host)
 
-def execute_cmd_with_stdout(host, user, password, cmd):
+def do_execute_cmd_with_stdout(host, user, password, cmd):
     LOG.debug("execute ssh command, host = %s, cmd = %s" % (host, cmd))
     if host is None:
         raise SSHCommandFailure(host=host, command=cmd, error="host is None")
@@ -82,6 +92,16 @@ def execute_cmd_with_stdout(host, user, password, cmd):
         raise SSHCommandFailure(
             host=ssh.host, command=cmd, error=operate_result[2])
 
+def execute_cmd_with_stdout(host, user, password, cmd, retry_time=1, interval=1):
+    for i in range(retry_time):
+        try:
+            do_execute_cmd_with_stdout(host, user, password, cmd)
+            return True
+        except Exception:
+            time.sleep(interval)
+            continue
+    LOG.error("execute ssh command failed, host = % s" % host)
+    raise CheckHostStatusFailure(host=host)
 
 def scp_file_to_host(host, user, password, file_name, local_dir, remote_dir):
     LOG.debug("spc file to host, host = %s, file_name = %s, "

@@ -9,9 +9,6 @@ from heat.openstack.common import log as logging
 import json
 import vcloud_proxy_data_handler
 from pyvcloud import vcloudair
-from pyvcloud.vcloudair import VCA
-from pyvcloud.schema.vcd.v1_5.schemas.vcloud.networkType import NatRuleType, GatewayNatRuleType, ReferenceType, NatServiceType, FirewallRuleType, ProtocolsType
-
 
 LOG=logging.getLogger(__name__)
 

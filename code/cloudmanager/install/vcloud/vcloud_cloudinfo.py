@@ -3,7 +3,6 @@ import sys
 sys.path.append('..')
 
 from heat.openstack.common import log as logging
-import cloudinfo_util as utils
 import threading
 import os
 import json
@@ -15,7 +14,7 @@ _vcloud_access_cloud_data_file_lock = threading.Lock()
 
 LOG=logging.getLogger(__name__)
 
-class VcloudCloudInfo(utils.CloudInfo):
+class VcloudCloudInfo:
     def __init__(self):
 
         self.cloud_id = None

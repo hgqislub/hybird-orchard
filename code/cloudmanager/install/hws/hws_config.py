@@ -2,10 +2,7 @@
 import sys
 sys.path.append('..')
 
-import os
-import pdb
 from heat.openstack.common import log as logging
-import config_util as utils
 from cloudmanager.vpn_configer import VpnConfiger
 from cloudmanager.vpn import VPN
 import cloudmanager.constant as constant
@@ -17,12 +14,12 @@ from hws_cascaded_configer import CascadedConfiger
 from cloudmanager.commonutils import *
 import cloudmanager.exception as exception
 from cloud_manager_exception import *
-from retry_decorator import RetryDecorator
+from cloudmanager.util.retry_decorator import RetryDecorator
 from hws_cloud_info_persist import *
 
 LOG = logging.getLogger(__name__)
 MAX_RETRY = 10
-class HwsConfig(utils.ConfigUtil):
+class HwsConfig(object):
     def __init__(self):
         self.install_info = None
         self.proxy_info = None

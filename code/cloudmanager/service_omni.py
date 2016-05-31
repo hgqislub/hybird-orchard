@@ -5,8 +5,8 @@ sys.path.append('..')
 import os
 import pdb
 from heat.openstack.common import log as logging
-import cloud.hws.hws_install as hws_installer
-import cloud.hws.hws_config as hws_config
+import install.hws.hws_install as hws_installer
+import install.hws.hws_config as hws_config
 
 LOG = logging.getLogger(__name__)
 
@@ -60,8 +60,8 @@ class Cloud(object):
     def cloud_install(self):
         self.installer.cloud_install()
 
-        install_info = self.installer.package_install_info()
-        self.configer.initialize(self.cloud_params, install_info)
+        cloud_info = self.installer.package_cloud_info()
+        self.configer.initialize(self.cloud_params, cloud_info)
         self.register_cloud()
 
     def cloud_preuninstall(self):
@@ -73,8 +73,8 @@ class Cloud(object):
         self.configer.install_info = install_info
         self.unregister_cloud()   #unregister cloud information
   
-    def get_install_info(self):
-        pass
+    def get_cloud_info(self):
+        self.installer.get_cloud_info()
 
     def register_cloud(self):
         self.configer.config_vpn()

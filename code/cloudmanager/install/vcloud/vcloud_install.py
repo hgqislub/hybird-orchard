@@ -8,7 +8,6 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
 import time
 import socket
 from heat.openstack.common import log as logging
-import cloud_util as utils 
 from cloudmanager.exception import *
 from cloudmanager.environmentinfo import *
 import vcloud_proxy_install as proxy_installer
@@ -62,7 +61,7 @@ def distribute_subnet():
 
 
 
-class VcloudCloudInstaller(utils.CloudUtil):
+class VcloudCloudInstaller:
     def __init__(self,cloud_id=None,
                        cloud_params=None, vcloud_url=None,
                        vcloud_org=None,

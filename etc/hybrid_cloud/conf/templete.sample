@@ -1,0 +1,57 @@
+{
+  "AWSTemplateFormatVersion" : "2016-05-31",
+  "Description" : "HWS CloudFormation Sample Template",
+  "Parameters" : {
+  },
+
+  "Resources" : {
+    "Test" : {
+      "Type" : "OS::Heat::HwsCloud",
+      "Properties" : {
+        "CloudType" : "HWS",
+        "AZName" : "az42",
+	"DataCenter":"cn-north-1",
+        "EnableNetworkCrossClouds": "true",
+        "DriverType":"agent",
+	"ProjectInfo":{
+	  "project_id" : "91d957f0b92d48f0b184c26975d2346e",
+          "access_key" : "YKTA94WTIDZNDUVCY4QI",
+          "secret_key": "DHSYAC8LZVB5TCEEX39XMXNJ6BOAGA0UTJA7PCT3",
+          "protocol" : "https",
+          "port" : "443",
+          "region" : "cn-north-1",
+          "availability_zone" : "cn-north-1a",
+          "host" : "myhwclouds"
+         },
+	"Cascaded":{
+	  "external_api_ip":"172.16.2.4",
+          "tunnel_bearing_ip":"172.28.64.4",
+	  "internal_base_ip":"172.28.0.12",
+	  "debug":"172.16.0.4",
+	  "image":"6b3d1a51-f49a-4500-99e2-29f2a6a6afb0",
+	  "flavor":"c2.2xlarge"
+	},
+	"Vpn":{
+	  "exist":"false",
+	  "public_ip":"",
+	  "external_api_ip":"172.16.2.254",
+	  "tunnel_bearing_ip":"172.28.64.254",
+	  "image":"f5343571-7b8f-4d7a-97c5-2bcba32fe7cd",
+	  "flavor":"c1.medium"
+	},
+	"Proxy":{
+	  "image":"",
+	  "flavor":""
+	},
+	"Network":{
+	  "vpc_cidr":"172.16.0.0/12",
+	  "external_api_cidr":"172.16.2.0/24",
+	  "tunnel_bearing_cidr":"172.28.64.0/24",
+	  "internal_base_cidr":"172.28.0.0/20",
+	  "debug_cidr":"172.16.0.0/24"
+	},
+	"Extra":{}
+      }
+    }
+  }
+}

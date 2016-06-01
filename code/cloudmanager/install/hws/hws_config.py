@@ -93,12 +93,12 @@ class HwsConfig(object):
                 user=constant.VpnConstant.VPN_ROOT,
                 password=constant.VpnConstant.VPN_ROOT_PWD)
 
-        for other_cloud_id in self.installer.cloud_info_handler.list_all_cloud_id():
+        for other_cloud_id in self.cloud_info_handler.list_all_cloud_id():
             if other_cloud_id == cloud_id:
                 continue
 
             other_cloud = \
-                self.installer.cloud_info_handler.get_cloud_info_with_id(other_cloud_id)
+                self.cloud_info_handler.get_cloud_info_with_id(other_cloud_id)
             if not other_cloud["access"]:
                 continue
 
@@ -261,10 +261,8 @@ class HwsConfig(object):
     def config_route(self):
         self._config_cascading_route()
         self._config_cascaded_route()
-        try:
-            self._enable_network_cross()
-        except Exception as e:
-            LOG.error("enable_network_cross error: %s" % e.message)
+
+        self._enable_network_cross()
 
 
 
@@ -464,14 +462,15 @@ class HwsConfig(object):
 
     def _config_hws(self,host_ip, user, passwd):
         LOG.info("config hws /etc/nova/nova.json ...")
+        project_info = self.cloud_params["project_info"]
         for i in range(5):
             try:
-                gong_yao = self.cloud_params['ak']
-                si_yao = self.cloud_params['sk']
-                region = self.cloud_params['region']
-                host = self.cloud_params['host']
-                project_id = self.cloud_params['project_id']
-                resource_region = self.cloud_params['availability_zone']
+                gong_yao = project_info['access_key']
+                si_yao = project_info['secret_key']
+                region = project_info['region']
+                host = project_info['host']
+                project_id = project_info['project_id']
+                resource_region = project_info['availability_zone']
                 host_endpoint = ".".join([region, host, 'com.cn' ])
                 ecs_host = 'ecs.' + host_endpoint
                 evs_host = 'evs.' + host_endpoint
@@ -627,17 +626,32 @@ class HwsConfig(object):
     def remove_existed_cloud(self):
         if self.install_info is None:
             return
+        self.remove_aggregate()
         self.remove_cinder()
         self.remove_neutron_agent()
         self.remove_keystone()
         self.remove_proxy()
-        self.remove_cascading_dns()
-        self.remove_cascading_route()
-        self.remove_cascading_vpn_tunnel()
+        self.remove_dns()
+        self.remove_route()
+        self.remove_vpn_tunnel()
         self._stop_hws_gateway(host_ip= self.install_info["cascading_info"]["external_api_ip"],
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD)
 
+    def remove_aggregate(self):
+        cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
+        try:
+            execute_cmd_without_stdout(
+                host=cascading_api_ip,
+                user=constant.Cascading.ROOT,
+                password=constant.Cascading.ROOT_PWD,
+                cmd='cd %(dir)s; sh %(script)s %(cascaded_domain)s'
+                    % {"dir": constant.RemoveConstant.REMOTE_SCRIPTS_DIR,
+                       "script":
+                           constant.RemoveConstant.REMOVE_AGGREGATE_SCRIPT,
+                       "cascaded_domain": self.install_info["cascaded_info"]["domain"]})
+        except Exception as e:
+            LOG.error("remove aggregate error, error: %s" % e.message)
 
     def remove_cinder(self):
         cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
@@ -712,7 +726,7 @@ class HwsConfig(object):
         except Exception as e:
             LOG.error("remove proxy error: %s" % e.message)
 
-    def remove_cascading_dns(self):
+    def remove_dns(self):
         cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         cascaded_api_ip = self.install_info["cascaded_info"]['external_api_ip']
         address = "/%(cascaded_domain)s/%(cascaded_ip)s" \
@@ -778,7 +792,7 @@ class HwsConfig(object):
         return True
         pass
 
-    def remove_cascading_route(self):
+    def remove_route(self):
         cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
         try:
             execute_cmd_without_stdout(
@@ -798,7 +812,7 @@ class HwsConfig(object):
         except Exception as e:
             LOG.error("remove cascaded route error: %s", e.message)
 
-    def remove_cascading_vpn_tunnel(self):
+    def remove_vpn_tunnel(self):
         vpn_conn_name = self.install_info["vpn_conn_name"]
         try:
             local_vpn = VPN(self.install_info["cascading_vpn_info"]["external_api_ip"],

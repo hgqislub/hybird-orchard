@@ -423,7 +423,6 @@ class HwsCascadedInstaller(object):
             "api_conn_name": self.cloud_id + '-api',
             "tunnel_conn_name": self.cloud_id + '-tunnel'
         }
-        proxy_info = self.cloud_info_handler.read_proxy()
         #pdb.set_trace()
         info = {"cloud_id": self.cloud_id,
                 "access": self.cloud_info["access"],
@@ -434,7 +433,7 @@ class HwsCascadedInstaller(object):
                 "cascaded_subnets_info": cascaded_subnets_info,
                 "cascading_subnets_info": cascading_subnets_info,
                 "vpn_conn_name": vpn_conn_name,
-                "proxy_info": proxy_info
+                "proxy_info": self.proxy_info
                 }
 
         self.cloud_info_handler.write_cloud_info(info)

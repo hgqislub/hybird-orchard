@@ -5,7 +5,6 @@ import json
 import threading
 LOG = logging.getLogger(__name__)
 
-
 def read_conf(file_path):
     fd = None
     try:
@@ -88,6 +87,8 @@ class CloudInfoHandler:
             cloud_dict = self.get_all_unit_info()
             if self.cloud_id in cloud_dict.keys():
                 return cloud_dict[self.cloud_id]
+            else:
+                return None
         except Exception as e:
             LOG.error("read hws access cloud error, cloud_id: %s, error: %s"
                          % (self.cloud_id, e.message))
@@ -109,8 +110,8 @@ class CloudInfoHandler:
             self._file_lock.release()
 
 if __name__ == '__main__':
-    read_conf("E:\\test.txt")
-    handler = CloudInfoHandler("E:\\test.txt", "cloud1")
+    read_conf("D:\\test.txt")
+    handler = CloudInfoHandler("D:\\test.txt", "cloud1")
     vpn = dict()
     vpn["name"]="hgq1"
     vpn["id"]=1234

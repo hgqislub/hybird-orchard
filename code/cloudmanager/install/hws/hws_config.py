@@ -16,6 +16,7 @@ import cloudmanager.exception as exception
 from cloud_manager_exception import *
 from cloudmanager.util.retry_decorator import RetryDecorator
 from hws_cloud_info_persist import *
+from hws_util import *
 
 LOG = logging.getLogger(__name__)
 MAX_RETRY = 10
@@ -195,11 +196,20 @@ class HwsConfig(object):
                     current_step="_config_cascaded_route"))
     def _config_cascaded_route(self):
         LOG.info("add route to hws on cascaded ...")
+        self._modify_cascaded_external_api()
         check_host_status(
                 host=self.install_info["cascaded_info"]["public_ip"],
                 user=constant.HwsConstant.ROOT,
                 password=constant.HwsConstant.ROOT_PWD,
                 retry_time=100, interval=3)    #wait cascaded vm started
+
+        execute_cmd_without_stdout(
+                host=self.install_info["cascaded_info"]["public_ip"],
+                user=constant.HwsConstant.ROOT,
+                password=constant.HwsConstant.ROOT_PWD,
+                cmd="source /root/adminrc/; cps network-update --name tunnel_bearing --subnet %(tunnel_bearing_cidr)s"
+                    % {"tunnel_bearing_cidr":self.install_info["cascaded_subnets_info"]["tunnel_bearing"]},
+                retry_time=10, interval=3)    #wait cascaded vm started
 
         self._add_vpn_route_with_api(
                 host_ip=self.install_info["cascaded_info"]["public_ip"],
@@ -339,7 +349,7 @@ class HwsConfig(object):
 
     def config_cascaded(self):
         LOG.info("config cascaded")
-        self._modify_cascaded_external_api()
+
         cascaded_cf = CascadedConfiger(
                 public_ip_api = self.install_info["cascaded_info"]["public_ip"],
                 api_ip = self.install_info["cascaded_info"]["external_api_ip"],
@@ -426,7 +436,7 @@ class HwsConfig(object):
                 user=constant.HwsConstant.ROOT,
                 passwd=constant.HwsConstant.ROOT_PWD)
 
-        self._start_hws_gateway(self.install_info["cascaded_info"]["public_ip"],
+        start_hws_gateway(self.install_info["cascaded_info"]["public_ip"],
                                 constant.HwsConstant.ROOT,
                                 constant.HwsConstant.ROOT_PWD)
 
@@ -561,28 +571,7 @@ class HwsConfig(object):
                 LOG.error("config.py cascading error: %s"
                              % (e.format_message()))
         return True
-    
-    @staticmethod
-    def _start_hws_gateway(host_ip, user, passwd):
-        LOG.info("start hws java gateway ...")
-        execute_cmd_without_stdout(
-                    host=host_ip, user=user, password=passwd,
-                    cmd='cd %(dis)s; sh %(script)s restart'
-                    % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
-                        "script":
-                        constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
-                    )
 
-    @staticmethod
-    def _stop_hws_gateway(host_ip, user, password):
-        LOG.info("start hws java gateway ...")
-        execute_cmd_without_stdout(
-                    host=host_ip, user=user, password=password,
-                    cmd='cd %(dis)s; sh %(script)s stop'
-                    % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
-                        "script":
-                        constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
-                    )
 
     def config_storge(self):
         LOG.info("config storage...")
@@ -634,7 +623,7 @@ class HwsConfig(object):
         self.remove_dns()
         self.remove_route()
         self.remove_vpn_tunnel()
-        self._stop_hws_gateway(host_ip= self.install_info["cascading_info"]["external_api_ip"],
+        stop_hws_gateway(host_ip= self.install_info["cascading_info"]["external_api_ip"],
                 user=constant.Cascading.ROOT,
                 password=constant.Cascading.ROOT_PWD)
 

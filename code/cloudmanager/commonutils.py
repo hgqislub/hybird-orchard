@@ -20,7 +20,6 @@ def check_host_status(host, user, password, retry_time=100, interval=1):
     if host is None:
         raise SSHCommandFailure(host=host, command=cmd, error="host is None")
     ssh = sshclient.SSH(host=host, user=user, password=password)
-    error = ""
     for i in range(retry_time):
         try:
             ssh.execute("ls")
@@ -28,9 +27,8 @@ def check_host_status(host, user, password, retry_time=100, interval=1):
             return True
         except Exception as e:
             time.sleep(interval)
-            error = e.message
             continue
-    LOG.error("check host status failed, host = %s, error = %s" % (host, error))
+    LOG.error("check host status failed, host = %s" % host)
     raise CheckHostStatusFailure(host=host)
 
 

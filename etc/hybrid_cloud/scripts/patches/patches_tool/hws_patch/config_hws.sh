@@ -1,4 +1,5 @@
 #!/bin/sh
+NOVA_SAMPLE_CONFIG_FILE=/etc/nova/nova.json.sample
 NOVA_CONFIG_FILE=/etc/nova/nova.json
 PERSONALITY_PATH=/media/metadata/userdata.txt
 config_hws(){
@@ -44,4 +45,5 @@ if [ $# != 13 ]; then
     exit 1
 fi
 
+cp ${NOVA_SAMPLE_CONFIG_FILE} ${NOVA_CONFIG_FILE}
 config_hws ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10} ${11} ${12} ${13}

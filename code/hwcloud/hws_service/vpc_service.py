@@ -473,3 +473,56 @@ class VPCService(HWSService):
         request_body_dict["publicip"] = publicip
         request_body_string = json.dumps(request_body_dict)
         return self.put(uri, request_body_string)
+
+    def update_port(self, port_id, name=None, security_groups=None,
+                    allowed_address_pairs=None, extra_dhcp_opts=None):
+        """
+        :param project_id: string
+        :param port_id: string
+        :param name: string
+        :param security_groups:list
+        :param allowed_address_pairs:list,
+            use 1.1.1.1/0 as mac_ip to release mac-ip bind
+        :param extra_dhcp_opts: list
+        :return:
+        {
+            "port": {
+                "id": "7204e0da-40de-4207-a536-6f59b84f6f0e",
+                "name": "adc",
+                "status": "DOWN",
+                "admin_state_up": "true",
+                "fixed_ips": [
+                {
+                    "subnet_id": "689156ca-038f-4478-b265-fd26aa8bbe31",
+                    "ip_address": "192.168.0.9"
+                }
+                ],
+                "mac_address": "fa:16:3e:d7:f2:6c",
+                "network_id": "b4152e98-e3af-4e49-bb7f-7766e2b5ec63",
+                "tenant_id": "caa6cf4337ea47fb823b15709ebe8591",
+                "device_id": "",
+                "device_owner": "",
+                "security_groups": [
+                    "59b39002-e79b-4bac-8e27-aa884ab1beb6"
+                ],
+                "extra_dhcp_opts": [],
+                "allowed_address_pairs": [],
+                "binding:vnic_type": "normal"
+            }
+        }
+        """
+        uri = "/v1/ports/%s" % (port_id)
+        request_body_dict = dict()
+        port = dict()
+        if name:
+            port["name"] = name
+        if security_groups:
+            port["security_groups"] = security_groups
+        if allowed_address_pairs:
+            port["allowed_address_pairs"] = allowed_address_pairs
+        if extra_dhcp_opts:
+            port["extra_dhcp_opts"] = extra_dhcp_opts
+
+        request_body_dict["port"] = port
+        request_body_string = json.dumps(request_body_dict)
+        return self.put(uri, request_body_string)

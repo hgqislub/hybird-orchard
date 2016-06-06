@@ -56,7 +56,7 @@ class HwsCascadedInstaller(object):
 
     def _read_env(self):
         try:
-            env_info = conf_util.read_conf(constant.Cascading.ENV_FILE)["cascading"]
+            env_info = conf_util.read_conf(constant.Cascading.ENV_FILE)
             self.env = env_info["env"]
             self.cascading_api_ip = env_info["cascading_api_ip"]
             self.cascading_domain = env_info["cascading_domain"]
@@ -231,15 +231,15 @@ class HwsCascadedInstaller(object):
         pass
 
     def cloud_postuninstall(self):
-        pdb.set_trace()
-        #self.install_data_handler.delete_cloud_info()
-        #self.cloud_info_handler.delete_cloud_info()
+        #pdb.set_trace()
+        self.install_data_handler.delete_cloud_info()
+        self.cloud_info_handler.delete_cloud_info()
 
     def cloud_install(self):
         self._cloud_install()
 
     def _cloud_install(self):
-        self.proxy_info = proxy_manager.distribute_proxy()
+        self._install_proxy()
         self._install_network()
         self._install_vpn()
         self._install_cascaded()
@@ -256,6 +256,11 @@ class HwsCascadedInstaller(object):
         if self.delete_vpn_job_id:
             self.installer.block_until_delete_resource_success(self.delete_vpn_job_id)
         self._uninstall_network()
+
+    def _install_proxy(self):
+        if self.proxy_info is None:
+            self.proxy_info = proxy_manager.distribute_proxy()
+        self.install_data_handler.write_proxy(self.proxy_info)
 
     def _install_cascaded(self):
         self.cascaded_internal_base_ip = self._alloc_cascaded_ip(self.internal_base_cidr, "12")
@@ -288,11 +293,20 @@ class HwsCascadedInstaller(object):
             if self.vpn_server_id is None:
                 self.vpn_server_id = self.installer.block_until_create_vm_success(self.vpn_server_job_id)
 
+            self.unbound_vpn_ip_mac()
+
             self.install_data_handler.write_vpn(
                     self.vpn_server_id, self.vpn_public_ip,
                     self.vpn_external_api_ip, self.vpn_tunnel_bearing_ip
             )
         LOG.info("install cascaded success.")
+
+    def unbound_vpn_ip_mac(self):
+        nics = self.installer.get_all_nics(self.vpn_server_id)
+        for nic in nics:
+            port_id = nic["port_id"]
+            mac_address = nic["mac_addr"]
+            self.installer.unbound_ip_mac(port_id, mac_address)
 
     def _create_cascaded_nics(self):
         ##nic should add one by one to maintain right sequence
@@ -455,11 +469,13 @@ class HwsCascadedInstaller(object):
         self.internal_base_nic_id = None
         self.port_id_bind_public_ip = None
         self.security_group_id = None
+        self.proxy_info = None
         cloud_info = self.install_data_handler.read_cloud_info()
 
         if cloud_info is None:
-            pdb.set_trace()
             return
+        if "proxy_info" in cloud_info.keys():
+            self.proxy_info = cloud_info["proxy_info"]
 
         if "vpc" in cloud_info.keys():
             self.vpc_id = cloud_info["vpc"]["id"]

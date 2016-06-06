@@ -372,6 +372,31 @@ class ECSService(HWSService):
         response = self.post(uri, request_body_string)
         return response
 
+    def get_all_nics(self, project_id, server_id):
+        """
+        :param project_id:string
+        :param server_id: string
+        :return:
+        {
+            "interfaceAttachments": [
+                {
+                    "port_state": "ACTIVE",
+                    "fixed_ips": [
+                        {
+                            "subnet_id": "f8a6e8f8-c2ec-497c-9f23-da9616de54ef",
+                            "ip_address": "192.168.1.3"
+                        }
+                    ],
+                    "net_id": "3cb9bc59-5699-4588-a4b1-b87f96708bc6",
+                    "port_id": "ce531f90-199f-48c0-816c-13e38010b442",
+                    "mac_addr": "fa:16:3e:4c:2c:30"
+                }
+            ]
+        }
+        """
+        uri = '/v2/%s/servers/%s/os-interface' % (project_id, server_id)
+        return self.get(uri)
+
     def get_nic_info(self, project_id, server_id, nic_id):
         """
         :param project_id: string

@@ -1,14 +1,19 @@
 {
-    "HWS@91d957f0b92d48f0b184c26975d2346e@az41": {
-        "vpn_conn_name": {
-            "tunnel_conn_name": "HWS@91d957f0b92d48f0b184c26975d2346e@az41-tunnel",
-            "api_conn_name": "HWS@91d957f0b92d48f0b184c26975d2346e@az41-api"
+    "HWS@az49": {
+        "cloud_id": "HWS@az49",
+        "cascaded_info": {
+            "public_ip": "117.78.33.54",
+            "aggregate": "az49.cn-north-1--hws",
+            "domain": "az49.cn-north-1--hws.huawei.com",
+            "external_api_ip": "172.16.2.4",
+            "tunnel_bearing_ip": "172.28.64.4"
         },
         "cascaded_vpn_info": {
-            "public_ip": "117.78.43.201",
-            "external_api_ip": "172.16.1.254",
-            "tunnel_bearing_ip": "172.28.48.254"
+            "public_ip": "117.78.33.50",
+            "external_api_ip": "172.16.2.254",
+            "tunnel_bearing_ip": "172.28.64.254"
         },
+        "access": false,
         "cascading_vpn_info": {
             "public_ip": "205.177.226.131",
             "external_api_ip": "162.3.141.253",
@@ -20,13 +25,60 @@
         },
         "cascaded_subnets_info": {
             "internal_base": "172.28.0.0/20",
+            "tunnel_bearing_id": "e122a9b1-f121-4d81-a4ab-17998c8a7ec4",
+            "tunnel_bearing": "172.28.64.0/24",
+            "external_api": "172.16.2.0/24",
+            "external_api_gateway_ip": "172.16.2.1",
+            "internal_base_id": "851d241c-cf14-4c00-b6ab-71efb4ec81b3",
             "debug": "172.16.0.0/24",
+            "vpc_id": "b5a6f9cc-d095-4ac3-826b-c80aa6c41501"
+        },
+        "vpn_conn_name": {
+            "tunnel_conn_name": "HWS@az49-tunnel",
+            "api_conn_name": "HWS@az49-api"
+        },
+        "cascading_subnets_info": {
+            "external_api": "162.3.141.0/24",
+            "tunnel_bearing": "192.28.48.0/20"
+        },
+        "proxy_info": {
+            "status": "normal",
+            "proxy_num": "proxy001",
+            "manageip": "172.28.0.8",
+            "id": "420862BE-7F3E-E00E-8BED-39FD020FEC2F"
+        }
+    },
+    "HWS@az41": {
+        "access": true,
+        "cascading_vpn_info": {
+            "public_ip": "205.177.226.131",
+            "external_api_ip": "162.3.141.253",
+            "tunnel_bearing_ip": "192.28.48.253"
+        },
+        "cascading_info": {
+            "domain": "cascading.hybrid.huawei.com",
+            "external_api_ip": "162.3.141.60"
+        },
+        "cloud_id": "HWS@az41",
+        "cascaded_subnets_info": {
+            "internal_base": "172.28.0.0/20",
             "external_api": "172.16.1.0/24",
             "external_api_gateway_ip": "172.16.1.1",
-            "tunnel_bearing": "172.28.48.0/20"
+            "internal_base_id": "ffeb9318-4c4a-4f27-beb8-aef89c9e6fda",
+            "debug": "172.16.0.0/24",
+            "vpc_id": "c15ffd2e-ba90-4a76-b948-f96e15ddbfac",
+            "tunnel_bearing_id": "ddcfa8a6-263e-4638-9c5c-694d0c2bb5b2",
+            "tunnel_bearing": "172.28.48.0/24"
+        },
+        "proxy_info": null,
+        "cascaded_vpn_info": {
+            "public_ip": "117.78.32.101",
+            "external_api_ip": "172.16.1.254",
+            "tunnel_bearing_ip": "172.28.48.254"
         },
         "cascaded_info": {
-            "public_ip": "117.78.38.147",
+            "public_ip": "117.78.35.29",
+            "aggregate": "az41.cn-north-1--hws",
             "domain": "az41.cn-north-1--hws.huawei.com",
             "external_api_ip": "172.16.1.4",
             "tunnel_bearing_ip": "172.28.48.4"
@@ -34,6 +86,10 @@
         "cascading_subnets_info": {
             "external_api": "162.3.141.0/24",
             "tunnel_bearing": "192.28.48.0/20"
+        },
+        "vpn_conn_name": {
+            "tunnel_conn_name": "HWS@az41-tunnel",
+            "api_conn_name": "HWS@az41-api"
         }
     }
 }

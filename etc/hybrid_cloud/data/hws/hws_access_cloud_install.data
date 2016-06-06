@@ -1,39 +1,98 @@
 {
-    "HWS@91d957f0b92d48f0b184c26975d2346e@az41": {
+    "HWS@az49": {
+        "public_ip": {
+            "cascaded_public_ip": "117.78.33.54",
+            "vpn_public_ip": "117.78.33.50",
+            "vpn_public_ip_id": "417994d5-04e7-40ca-b1c6-259e491e3140",
+            "cascaded_public_ip_id": "80afd3dc-504f-40a5-a8f9-dbdee1dbaab0"
+        },
         "subnets": {
             "internal_base": {
                 "cidr": "172.28.0.0/20",
-                "id": "d0fac5ac-4c0e-457c-9dad-2f889f5f3788"
+                "id": "851d241c-cf14-4c00-b6ab-71efb4ec81b3"
             },
             "debug": {
                 "cidr": "172.16.0.0/24",
-                "id": "e31cce42-c216-4988-9643-ef51436f86f3"
+                "id": "63ba4d4e-3e39-4a14-9a11-c4b399cb3eca"
             },
             "external_api": {
-                "cidr": "172.16.1.0/24",
-                "id": "5fd5a726-5563-4541-8504-2c97fb14275b"
+                "cidr": "172.16.2.0/24",
+                "id": "9f7b0ca8-f895-4017-a0bd-e49174107304"
             },
             "tunnel_bearing": {
-                "cidr": "172.28.48.0/20",
-                "id": "8237069f-3715-455f-9388-94848fc1cb1a"
+                "cidr": "172.28.64.0/24",
+                "id": "e122a9b1-f121-4d81-a4ab-17998c8a7ec4"
             }
         },
         "vpn": {
-            "public_ip": "117.78.43.201",
-            "server_id": "ff2fe34d-6125-4c5d-a1c1-1edeb337bd2f",
-            "external_api_ip": "172.16.1.254",
-            "tunnel_bearing_ip": "172.28.48.254"
+            "public_ip": "117.78.33.50",
+            "server_id": "ecde93e5-7b74-495f-bfa3-6b454a5a690e",
+            "external_api_ip": "172.16.2.254",
+            "tunnel_bearing_ip": "172.28.64.254"
+        },
+        "cascaded": {
+            "server_id": "1a32d5a2-2eac-45da-a827-6252ba2cfb10",
+            "tunnel_bearing_nic_id": "761261c0-ce3b-43cd-9cf0-df3664c2400c",
+            "internal_base_nic_id": "1ec08cf9-04ad-4eda-9fde-c82dca461d52",
+            "public_ip": "117.78.33.54",
+            "external_api_nic_id": "9a2d01b8-2640-46bf-b728-c52dc296edfe",
+            "port_id_bind_public_ip": "9a2d01b8-2640-46bf-b728-c52dc296edfe",
+            "external_api_ip": "172.16.2.4",
+            "tunnel_bearing_ip": "172.28.64.4"
         },
         "vpc": {
             "cidr": "172.16.0.0/12",
-            "id": "c708095b-cc66-42c7-a9cb-9268d42a6aaa",
-            "name": "hgqvpc"
+            "security_group_id": "d7f71625-3f57-4bbd-8033-de3899c6970f",
+            "id": "b5a6f9cc-d095-4ac3-826b-c80aa6c41501",
+            "name": "az49_vpc"
+        }
+    },
+    "HWS@az41": {
+        "public_ip": {
+            "cascaded_public_ip": "117.78.35.29",
+            "vpn_public_ip": "117.78.32.101",
+            "vpn_public_ip_id": "1cf24111-942c-4d37-8259-cd0dba71d137",
+            "cascaded_public_ip_id": "ffca9154-57d9-4eec-ac1b-30c199fc96ac"
+        },
+        "subnets": {
+            "internal_base": {
+                "cidr": "172.28.0.0/20",
+                "id": "ffeb9318-4c4a-4f27-beb8-aef89c9e6fda"
+            },
+            "debug": {
+                "cidr": "172.16.0.0/24",
+                "id": "91d97457-d24b-46de-a8ba-cb65d7aaa766"
+            },
+            "external_api": {
+                "cidr": "172.16.1.0/24",
+                "id": "957b3563-8c41-48e4-a569-73a1e4651819"
+            },
+            "tunnel_bearing": {
+                "cidr": "172.28.48.0/24",
+                "id": "ddcfa8a6-263e-4638-9c5c-694d0c2bb5b2"
+            }
+        },
+        "vpn": {
+            "public_ip": "117.78.32.101",
+            "server_id": "83893ae7-ec5f-426f-975b-52f4c76335f4",
+            "external_api_ip": "172.16.1.254",
+            "tunnel_bearing_ip": "172.28.48.254"
         },
         "cascaded": {
-            "public_ip": "117.78.38.147",
-            "server_id": "db81ae8f-e1f2-4fc7-9a4f-7fe307d79425",
+            "public_ip": "117.78.35.29",
+            "server_id": "6fe8fc4f-4aac-421c-b3d5-99310f09dbee",
+            "tunnel_bearing_nic_id": "415fc012-65cd-437d-ae2a-ef7dcb246d0f",
+            "external_api_nic_id": "0d34deb1-be1a-4904-b829-23023e6d7887",
+            "internal_base_nic_id": "aa8194c7-32c7-4b1d-9cf5-13220f118645",
+            "port_id_bind_public_ip": "0d34deb1-be1a-4904-b829-23023e6d7887",
             "external_api_ip": "172.16.1.4",
             "tunnel_bearing_ip": "172.28.48.4"
+        },
+        "vpc": {
+            "cidr": "172.16.0.0/12",
+            "security_group_id": "e15234f2-07ba-4e86-b32d-db822d2878fe",
+            "id": "c15ffd2e-ba90-4a76-b948-f96e15ddbfac",
+            "name": "az41_vpc"
         }
     }
 }

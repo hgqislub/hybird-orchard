@@ -1,0 +1,2 @@
+sh /home/hybrid_cloud/scripts/after_reboot/add_router_after_reboot.sh > /tmp/add_vpn_route.log &
+sh /home/hybrid_cloud/scripts/patches/patches_tool/hws_patch/hws_gateway.sh start >/dev/null 2>&1 &

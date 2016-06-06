@@ -26,11 +26,21 @@ LOG = logging.getLogger(__name__)
 def start_hws_gateway(host_ip, user, passwd):
     execute_cmd_without_stdout(
                 host=host_ip, user=user, password=passwd,
-                cmd='cd %(dis)s; sh %(script)s '
+                cmd='cd %(dis)s; sh %(script)s start'
                 % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
                     "script":
                     constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
     )
+
+def stop_hws_gateway(host_ip, user, password):
+        LOG.info("start hws java gateway ...")
+        execute_cmd_without_stdout(
+                    host=host_ip, user=user, password=password,
+                    cmd='cd %(dis)s; sh %(script)s stop'
+                    % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
+                        "script":
+                        constant.PatchesConstant.START_HWS_GATEWAY_SCRIPT}
+                    )
 
 class HwsInstaller(object):
     def __init__(self, cloud_info):
@@ -172,6 +182,17 @@ class HwsInstaller(object):
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
         raise_exception=InstallCascadedFailed(
+        current_step="get server nics info"))
+    def get_all_nics(self, server_id):
+        result = self.hws_client.ecs.get_all_nics(self.project_id, server_id)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise UninstallCascadedFailed(current_step="get server incs info")
+        return result[RSP_BODY]["interfaceAttachments"]
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
         current_step="get server ips"))
     def get_server_ips(self, server_id):
         result = self.hws_client.ecs.get_server_ips(self.project_id, server_id)
@@ -305,3 +326,22 @@ class HwsInstaller(object):
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="reboot cascaded")
+
+    @RetryDecorator(max_retry_count=MAX_RETRY,
+        raise_exception=InstallCascadedFailed(
+        current_step="unbound vpn ip-mac"))
+    def unbound_ip_mac(self, port_id, mac_address):
+        allowed_address_pairs = []
+        #allow all ip_addresses to access
+        pair1={"ip_address":"0.0.0.1/1",
+                "mac_address":mac_address}
+        pair2={"ip_address":"128.0.0.0/1",
+                "mac_address":mac_address}
+        allowed_address_pairs.append(pair1)
+        allowed_address_pairs.append(pair2)
+
+        result = self.hws_client.vpc.update_port(port_id, allowed_address_pairs=allowed_address_pairs)
+        status = str(result[RSP_STATUS])
+        if not status.startswith(RSP_STATUS_OK):
+            LOG.error(result)
+            raise InstallCascadedFailed(current_step="unbound vpn ip-mac")

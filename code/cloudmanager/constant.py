@@ -56,7 +56,7 @@ class Cascading(object):
     KEYSTONE_ENDPOINT_SCRIPT = "create_keystone_endpoint.sh"
     ENABLE_OPENSTACK_SERVICE = "enable_openstack_service.sh"
     UPDATE_PROXY_PARAMS = "modify_proxy_params.sh"
-    ENV_FILE = "/home/hybrid_cloud/conf/env.conf"
+    ENV_FILE = "/home/hybrid_cloud/conf/environment.conf"
 
 class AfterRebootConstant(object):
     REMOTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/after_reboot/"

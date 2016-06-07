@@ -60,13 +60,13 @@ class HwsCascadedInstaller(object):
             self.env = env_info["env"]
             self.cascading_api_ip = env_info["cascading_api_ip"]
             self.cascading_domain = env_info["cascading_domain"]
-            self.cascading_vpn_ip = env_info["cascading_vpn_ip"]
-            self.cascading_vpn_public_gw = env_info["cascading_vpn_public_gw"]
+            self.cascading_vpn_ip = env_info["local_vpn_ip"]
+            self.cascading_vpn_public_gw = env_info["local_vpn_public_gw"]
             self.cascading_eip = env_info["cascading_eip"]
-            self.cascading_api_subnet = env_info["cascading_api_subnet"]
-            self.cascading_vpn_api_ip = env_info["cascading_vpn_api_ip"]
-            self.cascading_tunnel_subnet = env_info["cascading_tunnel_subnet"]
-            self.cascading_vpn_tunnel_ip = env_info["cascading_vpn_tunnel_ip"]
+            self.cascading_api_subnet = env_info["local_api_subnet"]
+            self.cascading_vpn_api_ip = env_info["local_vpn_api_ip"]
+            self.cascading_tunnel_subnet = env_info["local_tunnel_subnet"]
+            self.cascading_vpn_tunnel_ip = env_info["local_vpn_tunnel_ip"]
             self.existed_cascaded = env_info["existed_cascaded"]
         except IOError as e:
             error = "read file = %s error" % constant.Cascading.ENV_FILE
@@ -98,8 +98,6 @@ class HwsCascadedInstaller(object):
 
     def _create_subnet(self):
         az = self.availability_zone
-
-
         self.external_api_gateway = self._alloc_gateway_ip(self.external_api_cidr)
         tunnel_bearing_gateway = self._alloc_gateway_ip(self.tunnel_bearing_cidr)
         internal_base_gateway = self._alloc_gateway_ip(self.internal_base_cidr)
@@ -241,8 +239,17 @@ class HwsCascadedInstaller(object):
     def _cloud_install(self):
         self._install_proxy()
         self._install_network()
-        self._install_vpn()
+        if self.cloud_info["vpn_info"]["exist"] == "true":
+            self._read_exist_vpn_info()
+        else:
+            self._install_vpn()
         self._install_cascaded()
+
+    def _read_exist_vpn_info(self):
+        vpn_info = self.cloud_info["vpn_info"]
+        self.vpn_public_ip = vpn_info["public_ip"],
+        self.vpn_external_api_ip = vpn_info["external_api_ip"],
+        self.vpn_tunnel_bearing_ip = vpn_info["tunnel_bearing_ip"]
 
     def cloud_uninstall(self):
         self._cloud_uninstall()
@@ -400,6 +407,7 @@ class HwsCascadedInstaller(object):
             "public_ip": self.cascaded_public_ip,
             "external_api_ip": self.cascaded_external_api_ip,
             "tunnel_bearing_ip": self.cascaded_tunnel_bearing_ip,
+            "internal_base_ip": self.cascaded_internal_base_ip,
             "domain": self._distribute_cloud_domain(
                      self.cloud_info["project_info"]['region'], self.cloud_info['azname'], "--hws"),
             "aggregate": self.cascaded_aggregate
@@ -407,6 +415,7 @@ class HwsCascadedInstaller(object):
 
         cascaded_subnets_info = {
             "vpc_id": self.vpc_id,
+            "security_group_id": self.security_group_id,
             "tunnel_bearing_id": self.tunnel_bearing_id,
             "internal_base_id": self.internal_base_id,
             "external_api": self.external_api_cidr,

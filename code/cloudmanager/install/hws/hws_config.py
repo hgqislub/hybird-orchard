@@ -203,14 +203,15 @@ class HwsConfig(object):
                 password=constant.HwsConstant.ROOT_PWD,
                 retry_time=100, interval=3)    #wait cascaded vm started
 
+        """
         execute_cmd_without_stdout(
                 host=self.install_info["cascaded_info"]["public_ip"],
                 user=constant.HwsConstant.ROOT,
                 password=constant.HwsConstant.ROOT_PWD,
                 cmd="source /root/adminrc/; cps network-update --name tunnel_bearing --subnet %(tunnel_bearing_cidr)s"
                     % {"tunnel_bearing_cidr":self.install_info["cascaded_subnets_info"]["tunnel_bearing"]},
-                retry_time=10, interval=3)    #wait cascaded vm started
-
+                retry_time=10, interval=3)    
+        """
         self._add_vpn_route_with_api(
                 host_ip=self.install_info["cascaded_info"]["public_ip"],
                 user=constant.HwsConstant.ROOT,
@@ -499,6 +500,7 @@ class HwsConfig(object):
                         '%(evs_host)s %(vpc_host)s '
                         '%(gong_yao)s %(si_yao)s '
                         '%(tunnel_cidr)s %(route_gw)s '
+                        '%(rabbit_host_ip)s %(security_group_vpc)s'
                         % {"dis": constant.PatchesConstant.REMOTE_HWS_SCRIPTS_DIR,
                            "script":
                                constant.PatchesConstant.CONFIG_HWS_SCRIPT,
@@ -516,7 +518,9 @@ class HwsConfig(object):
                            "tunnel_cidr":
                                self.install_info["cascaded_subnets_info"]["tunnel_bearing"],
                            "route_gw":
-                               self.install_info["cascaded_vpn_info"]["tunnel_bearing_ip"]
+                               self.install_info["cascaded_vpn_info"]["tunnel_bearing_ip"],
+                           "rabbit_host_ip":self.install_info["cascaded_info"]["internal_base_ip"],
+                           "security_group_vpc":self.install_info["cascaded_subnets_info"]["security_group_id"]
                             })
 
                 self._restart_nova_computer(host_ip, user, passwd)

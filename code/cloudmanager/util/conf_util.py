@@ -7,10 +7,17 @@ LOG = logging.getLogger(__name__)
 
 def read_conf(file_path):
     fd = None
+    conf = {}
     try:
+
         fd = open(file_path, 'r+')
         tmp = fd.read()
-        return json.loads(tmp)
+        conf = json.loads(tmp)
+        return conf
+    except Exception as e:
+        LOG.error("read conf file : %s, error: %s"
+                         % (file_path, e.message))
+        return conf
     finally:
         if fd:
             fd.close()

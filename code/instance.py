@@ -1797,5 +1797,6 @@ def resource_mapping():
         'OS::Heat::FusionsphereCloud': FusionsphereCloud,
         'OS::Heat::CloudVpn': CloudVpn,
         'OS::Heat::FusionSphereCloudVpn': FusionSphereCloudVpn,
+        'OS::Heat::vCloudVpn': vCloudVpn,
         'OS::Heat::HwsCloud': HwsCloud
     }

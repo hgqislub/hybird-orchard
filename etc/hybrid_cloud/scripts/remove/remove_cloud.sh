@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ $# != 4 ]; then
+if [ $# != 4 ]; then 
    echo "use: sh remove_cloud.sh domain proxy_id proxy_num api_ip"
    exit 1
 fi
@@ -27,7 +27,7 @@ echo remove_keystone_endpoint.sh ${domain}
 
 sh remove_proxy_host.sh ${proxy} $proxy_num
 echo remove_proxy_host.sh ${proxy} $proxy_num
-
-sh /home/hybrid_cloud/scripts/public/modify_dns_server_address.sh remove /${domain}/${ip}
+ 
+sh /home/hybrid_cloud/scripts/public/modify_dns_server_address.sh remove /${domain}/${ip} 
 
 echo "sh /home/hybrid_cloud/scripts/public/modify_dns_server_address.sh remove /${domain}/${ip}"

@@ -180,7 +180,7 @@ echo keystone endpoint-create --region ${az_region} --service ${metering_id} --p
 
 echo sleep 1s >> ${RUN_SCRIPT}
 
-echo keystone endpoint-create --region ${az_region} --service ${v2v_id} --publicurl "'"http://${v2v_gw_ip}:8090/"'"  --internalurl "'"http://${v2v_gw_ip}:8090/"'" --adminurl "'"http://${v2v_gw_ip}:8090/"'" >> ${RUN_SCRIPT}
+echo '#'keystone endpoint-create --region ${az_region} --service ${v2v_id} --publicurl "'"http://${v2v_gw_ip}:8090/"'"  --internalurl "'"http://${v2v_gw_ip}:8090/"'" --adminurl "'"http://${v2v_gw_ip}:8090/"'" >> ${RUN_SCRIPT}
 
 sh ${RUN_SCRIPT} > ${RUN_LOG} 2>&1
 

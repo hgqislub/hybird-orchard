@@ -34,7 +34,7 @@ then
     echo "do" >> ${RUN_SCRIPT}
     echo "  ip route add ${tunnel_subnet} via ${tunnel_gateway}" >> ${RUN_SCRIPT}
     echo "  sleep 1s" >> ${RUN_SCRIPT}
-    echo "  echo add external api route, sleep \$i" >> ${RUN_SCRIPT}
+    echo "  echo add tunnel route, sleep \$i" >> ${RUN_SCRIPT}
     echo "  ((i++==600)) && exit" >> ${RUN_SCRIPT}
     echo "done" >> ${RUN_SCRIPT}
 
@@ -59,7 +59,7 @@ then
     echo "do" >> ${RUN_SCRIPT}
     echo "  ip route add ${tunnel_subnet} via ${tunnel_gateway}" >> ${RUN_SCRIPT}
     echo "  sleep 1s" >> ${RUN_SCRIPT}
-    echo "  echo add external api route, sleep \$i" >> ${RUN_SCRIPT}
+    echo "  echo add tunnel route, sleep \$i" >> ${RUN_SCRIPT}
     echo "  ((i++==600)) && exit" >> ${RUN_SCRIPT}
     echo "done" >> ${RUN_SCRIPT}
 fi

@@ -1,17 +1,13 @@
 
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
-
 import time
 import socket
 from heat.openstack.common import log as logging
 
-import cloudmanager.util.conf_util as conf_util
-from cloudmanager.exception import *
-from cloudmanager.environmentinfo import *
-import cloudmanager.proxy_manager as proxy_manager
-import cloudmanager.constant as constant
+import heat.engine.resources.cloudmanager.util.conf_util as conf_util
+from heat.engine.resources.cloudmanager.exception import *
+from heat.engine.resources.cloudmanager.environmentinfo import *
+import heat.engine.resources.cloudmanager.proxy_manager as proxy_manager
+import heat.engine.resources.cloudmanager.constant as constant
 
 from hws_util import *
 from hws_cloud_info_persist import *
@@ -215,7 +211,8 @@ class HwsCascadedInstaller(object):
 
     def cloud_preinstall(self):
         pass
-
+    def cloud_preuninstall(self):
+        pass
 
     def _install_network(self):
         self._create_vpc()
@@ -290,6 +287,7 @@ class HwsCascadedInstaller(object):
                                       security_groups = security_groups)
                 self.cascaded_server_id = self.installer.block_until_create_vm_success(self.cascaded_server_job_id)
             self._create_cascaded_nics()
+            self._modify_cascaded_external_api()
         finally:
             self.install_data_handler.write_cascaded_info(
                     self.cascaded_server_id,self.cascaded_public_ip,
@@ -339,6 +337,47 @@ class HwsCascadedInstaller(object):
             self.port_id_bind_public_ip = external_api_port_id
             #pdb.set_trace()
             self.installer.reboot(self.cascaded_server_id, "SOFT")
+
+    def _modify_cascaded_external_api(self):
+        #ssh to vpn, then ssh to cascaded through vpn tunnel_bearing_ip
+        self.cascaded_domain = self._distribute_cloud_domain(
+                     self.cloud_info["project_info"]['region'], self.cloud_info['azname'], "--hws"),
+        modify_cascaded_api_domain_cmd = 'cd %(dir)s; ' \
+                    'source /root/adminrc; ' \
+                    'python %(script)s '\
+                    '%(cascading_domain)s %(cascading_api_ip)s '\
+                    '%(cascaded_domain)s %(cascaded_ip)s '\
+                    '%(gateway)s'\
+                    % {"dir": constant.Cascaded.REMOTE_HWS_SCRIPTS_DIR,
+                       "script":constant.Cascaded.MODIFY_CASCADED_SCRIPT_PY,
+                       "cascading_domain": self.cascading_domain,
+                       "cascading_api_ip": self.cascading_api_ip,
+                       "cascaded_domain":  self.cascaded_domain,
+                       "cascaded_ip": self.cascaded_external_api_ip,
+                       "gateway": self.external_api_gateway}
+        #pdb.set_trace()
+        for i in range(180):
+            try:
+                execute_cmd_without_stdout(
+                    host= self.vpn_public_ip,
+                    user=constant.VpnConstant.VPN_ROOT,
+                    password=constant.VpnConstant.VPN_ROOT_PWD,
+                    cmd='cd %(dir)s; python %(script)s '
+                        '%(cascaded_tunnel_ip)s %(user)s %(passwd)s \'%(cmd)s\''
+                    % {"dir": constant.VpnConstant.REMOTE_ROUTE_SCRIPTS_DIR,
+                       "script": constant.VpnConstant.MODIFY_CASCADED_API_SCRIPT,
+                       "cascaded_tunnel_ip": self.cascaded_tunnel_bearing_ip,
+                       "user": constant.HwsConstant.ROOT,
+                       "passwd": constant.HwsConstant.ROOT_PWD,
+                       "cmd": modify_cascaded_api_domain_cmd})
+                return True
+            except Exception as e:
+                if i == 120:
+                    #wait cascaded vm to reboot ok
+                    self.installer.reboot(self.cascaded_server_id, "SOFT")
+                    LOG.error("can not connect to cascaded tunnel ip, error: %s, reboot it" % e.message)
+                    return False
+                time.sleep(1)
 
     def uninstall_cascaded(self):
         self._uninstall_cascaded()
@@ -513,7 +552,7 @@ class HwsCascadedInstaller(object):
         cloud_info = self.cloud_info_handler.read_cloud_info()
         return cloud_info
 
-    def get_cloud_info(self, installer):
+    def get_cloud_info(self):
         self._read_install_info()
         return self._read_cloud_info()
 

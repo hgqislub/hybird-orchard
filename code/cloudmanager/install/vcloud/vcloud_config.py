@@ -1,21 +1,20 @@
 
-import sys
-sys.path.append('..')
 
 import os
 import pdb
 from heat.openstack.common import log as logging
-from cloudmanager.vpn_configer import VpnConfiger
-from cloudmanager.vpn import VPN
-import cloudmanager.constant as constant
+from heat.engine.resources.cloudmanager.vpn_configer import VpnConfiger
+from heat.engine.resources.cloudmanager.vpn import VPN
+import heat.engine.resources.cloudmanager.constant as constant
 from vcloudcloudpersist import VcloudCloudDataHandler
 import threading
 import time
-import cloudmanager.proxy_manager
-from cloudmanager.cascading_configer import CascadingConfiger
+import heat.engine.resources.cloudmanager.proxy_manager
+from heat.engine.resources.cloudmanager.cascading_configer import CascadingConfiger
+from vcloud_cascaded_configer import CascadedConfiger
 
-from cloudmanager.commonutils import *
-import cloudmanager.exception as exception
+from heat.engine.resources.cloudmanager.commonutils import *
+import heat.engine.resources.cloudmanager.exception as exception
 
 
 LOG = logging.getLogger(__name__)

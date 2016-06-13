@@ -58,17 +58,17 @@ def do_execute_cmd_without_stdout(host, user, password, cmd):
             host=ssh.host, command=cmd, error=operate_result[2])
 
 def execute_cmd_without_stdout(host, user, password, cmd, retry_time=1, interval=1):
-    error = ""
+    error = None
     for i in range(retry_time):
         try:
             do_execute_cmd_without_stdout(host, user, password, cmd)
             return True
         except Exception as e:
             time.sleep(interval)
-            error = e.message
+            error=e
             continue
     LOG.error("execute ssh command failed, host = % s" % host)
-    raise SSHCommandFailure(host=host, command=cmd, error = error)
+    raise SSHCommandFailure(host=host, command=cmd, error = error.message)
 
 def do_execute_cmd_with_stdout(host, user, password, cmd):
     LOG.debug("execute ssh command, host = %s, cmd = %s" % (host, cmd))

@@ -1,20 +1,18 @@
 
-import sys
-sys.path.append('..')
 
 from heat.openstack.common import log as logging
-from cloudmanager.vpn_configer import VpnConfiger
-from cloudmanager.vpn import VPN
-import cloudmanager.constant as constant
+from heat.engine.resources.cloudmanager.vpn_configer import VpnConfiger
+from heat.engine.resources.cloudmanager.vpn import VPN
+import heat.engine.resources.cloudmanager.constant as constant
 #import threading
 import time
-import cloudmanager.proxy_manager as proxy_manager
-from cloudmanager.cascading_configer import CascadingConfiger
+import heat.engine.resources.cloudmanager.proxy_manager as proxy_manager
+from heat.engine.resources.cloudmanager.cascading_configer import CascadingConfiger
 from hws_cascaded_configer import CascadedConfiger
-from cloudmanager.commonutils import *
-import cloudmanager.exception as exception
-from cloud_manager_exception import *
-from cloudmanager.util.retry_decorator import RetryDecorator
+from heat.engine.resources.cloudmanager.commonutils import *
+import heat.engine.resources.cloudmanager.exception as exception
+from heat.engine.resources.cloudmanager.exception import *
+from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
 from hws_cloud_info_persist import *
 from hws_util import *
 
@@ -34,6 +32,7 @@ class HwsConfig(object):
         cloud_id = self.install_info["cloud_id"]
         self.cloud_info_handler = \
             HwsCloudInfoPersist(constant.HwsConstant.CLOUD_INFO_FILE, cloud_id)
+        self._modify_cascaded_external_api()
 
     def _config_cascading_vpn(self):
         LOG.info("config local vpn")
@@ -196,7 +195,7 @@ class HwsConfig(object):
                     current_step="_config_cascaded_route"))
     def _config_cascaded_route(self):
         LOG.info("add route to hws on cascaded ...")
-        self._modify_cascaded_external_api()
+
         check_host_status(
                 host=self.install_info["cascaded_info"]["public_ip"],
                 user=constant.HwsConstant.ROOT,
@@ -582,7 +581,7 @@ class HwsConfig(object):
         #pdb.set_trace()
 
         self._config_storage(
-                host= self.install_info['cascaded_info']['external_api_ip'],
+                host= self.install_info['cascaded_info']['public_ip'],
                 user=constant.HwsConstant.ROOT,
                 password=constant.HwsConstant.ROOT_PWD,
                 cascading_domain=self.install_info['cascading_info']['domain'],

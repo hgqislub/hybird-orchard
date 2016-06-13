@@ -1,11 +1,13 @@
 __author__ = 'hgq'
 
-from hwcloud.hws_service.ecs_service import ECSService
-from hwcloud.hws_service.evs_service import EVSService
-from hwcloud.hws_service.ims_service import IMSService
-from hwcloud.hws_service.vpc_service import VPCService
-from hwcloud.hws_service.vbs_service import VBSService
+from heat.engine.resources.hwcloud.hws_service.ecs_service import ECSService
+from heat.engine.resources.hwcloud.hws_service.evs_service import EVSService
+from heat.engine.resources.hwcloud.hws_service.ims_service import IMSService
+from heat.engine.resources.hwcloud.hws_service.vpc_service import VPCService
+from heat.engine.resources.hwcloud.hws_service.vbs_service import VBSService
 import pdb
+
+
 class HWSClient(object):
     def __init__(self, cloud_info):
         self.ak = cloud_info['access_key']

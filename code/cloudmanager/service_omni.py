@@ -68,7 +68,7 @@ class Cloud(object):
         self.installer.cloud_preuninstall()
         pass
     def cloud_uninstall(self):
-        install_info = self.installer.get_install_info()
+        install_info = self.installer.get_cloud_info()
         self.installer.cloud_uninstall()   
         self.configer.install_info = install_info
         self.unregister_cloud()   #unregister cloud information
@@ -78,9 +78,9 @@ class Cloud(object):
 
     def register_cloud(self):
         self.configer.config_vpn()
-        self.configer.config_route()
         self.configer.config_cascading()
         self.configer.config_cascaded()
+        self.configer.config_route()
         self.configer.config_proxy()
         self.configer.config_patch()
         self.configer.config_storge()

@@ -6,7 +6,7 @@ from heat.openstack.common import log as logging
 import threading
 import os
 import json
-import cloudmanager.region_mapping
+import heat.engine.resources.cloudmanager.region_mapping
 
 _vcloud_access_cloud_data_file = os.path.join("/home/hybrid_cloud/data/vcloud",
                                            "vcloud_access_cloud_install.data")

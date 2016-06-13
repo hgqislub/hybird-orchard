@@ -1,15 +1,13 @@
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
-
-from hwcloud.hws_service.hws_client import HWSClient
-from retry_decorator import RetryDecorator
+from heat.engine.resources.hwcloud.hws_service.hws_client import HWSClient
+from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
 from heat.openstack.common import log as logging
-from cloud_manager_exception import *
+from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
+from heat.engine.resources.cloudmanager.exception import * 
 import time
-import cloudmanager.constant as constant
-from cloudmanager.commonutils import *
+import heat.engine.resources.cloudmanager.constant as constant
+from heat.engine.resources.cloudmanager.commonutils import *
 
 RSP_STATUS = "status"
 RSP_BODY = "body"
@@ -17,8 +15,8 @@ RSP_STATUS_OK = "2"
 MAX_RETRY = 50
 
 #unit=second
-SLEEP_TIME = 60
-MAX_CHECK_TIMES = 100
+SLEEP_TIME = 3
+MAX_CHECK_TIMES = 2000
 
 LOG = logging.getLogger(__name__)
 

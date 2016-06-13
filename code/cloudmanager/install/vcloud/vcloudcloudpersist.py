@@ -7,8 +7,8 @@ import json
 import logging
 
 from vcloud_cloudinfo import VcloudCloudInfo
-from cloudmanager.environmentinfo import *
-from cloudmanager.commonutils import *
+from heat.engine.resources.cloudmanager.environmentinfo import *
+from heat.engine.resources.cloudmanager.commonutils import *
 from heat.openstack.common import log as logging
 
 LOG=logging.getLogger(__name__)

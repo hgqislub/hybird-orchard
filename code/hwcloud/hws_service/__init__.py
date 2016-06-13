@@ -3,9 +3,12 @@ __author__ = 'Administrator'
 from urlparse import urljoin
 import json
 import time
-from hwcloud import LOG
+#from hwcloud import LOG
+from heat.openstack.common import log as logging
 
-from hwcloud.java_gateway import HWSRestMethod
+LOG = logging.getLogger(__name__)
+
+from heat.engine.resources.hwcloud.java_gateway import HWSRestMethod
 
 def retry(times, interval):
 

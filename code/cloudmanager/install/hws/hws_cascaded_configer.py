@@ -4,9 +4,9 @@ __author__ = 'q00222219@huawei'
 import time
 from heat.openstack.common import log as logging
 
-import cloudmanager.commonutils as commonutils
-import cloudmanager.constant as constant
-import cloudmanager.exception as exception
+import heat.engine.resources.cloudmanager.commonutils as commonutils
+import heat.engine.resources.cloudmanager.constant as constant
+import heat.engine.resources.cloudmanager.exception as exception
 import pdb
 
 LOG = logging.getLogger(__name__)
@@ -76,13 +76,13 @@ class CascadedConfiger(object):
                      "cascading_ip": self.cascading_api_ip,
                      "cascaded_domain":self.cascaded_domain,
                      "cascaded_ip":self.cascaded_ip}
-        for i in range(3):
+        for i in range(30):
             try:
                 commonutils.execute_cmd_without_stdout(
                     host=self.public_ip_api,
                     user=self.user,
                     password=self.password,
-                    cmd='cd %(dir)s; sh %(script)s replace %(address)s'
+                    cmd='cd %(dir)s; source /root/adminrc; sh %(script)s replace %(address)s'
                         % {"dir": constant.PublicConstant.SCRIPTS_DIR,
                            "script": constant.PublicConstant.
                                MODIFY_DNS_SERVER_ADDRESS,

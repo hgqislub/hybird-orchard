@@ -2,7 +2,7 @@ __author__ = 'Administrator'
 
 import json
 
-from hwcloud.hws_service import HWSService
+from heat.engine.resources.hwcloud.hws_service import HWSService
 
 
 class ECSService(HWSService):

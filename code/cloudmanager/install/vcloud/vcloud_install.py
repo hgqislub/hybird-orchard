@@ -2,22 +2,21 @@ import pdb
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
-#sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'+ '/' + '..'))
+
 
 import time
 import socket
 from heat.openstack.common import log as logging
-from cloudmanager.exception import *
-from cloudmanager.environmentinfo import *
+from heat.engine.resources.cloudmanager.exception import *
+from heat.engine.resources.cloudmanager.environmentinfo import *
 import vcloud_proxy_install as proxy_installer
 import vcloud_cloudinfo as data_handler
 import json
-import cloudmanager.region_mapping
-from cloudmanager.subnet_manager import SubnetManager
+import heat.engine.resources.cloudmanager.region_mapping
+from heat.engine.resources.cloudmanager.subnet_manager import SubnetManager
 from vcloudcloudpersist import VcloudCloudDataHandler
-from retry_decorator import RetryDecorator
-from cloud_manager_exception import *
+from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
+from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
 
 
 from pyvcloud import vcloudair
@@ -266,8 +265,6 @@ class VcloudCloudInstaller:
                 return True
         except Exception :
             LOG.error('create vm faild with exception vapp=%s. vdc=%s' %(vapp_name,self.vcloud_vdc))
-            exit(1)
-
 
     def delete_vm(self, vapp_name):
         try :
@@ -407,7 +404,7 @@ class VcloudCloudInstaller:
             self.installer.block_until_completed(result[1])
 
         network_num = self.installer.get_networks(vdc_name=self.vcloud_vdc)
-        if len(network_num) == 3:
+        if len(network_num) >= 3:
             LOG.info('create vcloud vdc network success.')
             self.api_gw = '172.30.0.1'
             self.api_subnet_cidr = '172.30.0.0/20'
@@ -470,7 +467,6 @@ class VcloudCloudInstaller:
                 LOG.info('create vapp network success network=%s vapp=%s.' %(network_name, the_vapp.name))
         except Exception :
             LOG.error('create vapp network failed  with excption network=%s vapp=%s.' %(network_name, the_vapp.name))
-            exit(1)
 
     def connect_vms_to_vapp_network(self, network_name, vapp_name, nic_index=0, primary_index=0,
                                     mode='DHCP', ipaddr=None):
@@ -492,7 +488,6 @@ class VcloudCloudInstaller:
                 LOG.info('connect vms to vapp network success network=%s vapp=%s.' %(network_name, vapp_name))
         except Exception :
             LOG.error('connect vms to vapp network failed with excption network=%s vapp=%s.' %(network_name, vapp_name))
-            exit(1)
 
     def add_nat_rule(self, original_ip, translated_ip):
         try :
@@ -520,7 +515,6 @@ class VcloudCloudInstaller:
                 LOG.info('add nat rule success vdc=%s .' %(self.vcloud_vdc))
         except Exception :
             LOG.error('add nat rule failed with excption vdc=%s .' %(self.vcloud_vdc))
-            exit(1)
 
     def delete_nat_rule(self, original_ip, translated_ip):
         try :
@@ -571,7 +565,6 @@ class VcloudCloudInstaller:
                 LOG.info('add dhcp success vdc=%s .' %(self.vcloud_vdc))
         except Exception :
             LOG.error('add dhcp failed with excption vdc=%s .' %(self.vcloud_vdc))
-            exit(1)
 
     def delete_dhcp_pool(self):
         try :
@@ -601,8 +594,6 @@ class VcloudCloudInstaller:
             time.sleep(20)
         except Exception :
             LOG.error('power on vapp=%s failed with excption vdc=%s .' %(vapp_name,self.vcloud_vdc))
-            exit(1)
-
 
     def vapp_undeploy(self,vapp_name):
         try :
@@ -657,7 +648,7 @@ class VcloudCloudInstaller:
                                          template_name=cascaded_image,
                                          catalog_name='vapptemplate')
         if result == False :
-            exit(1)
+            LOG.info("create cascaded vm failed.")
         else :
            self.create_vapp_network(network_name='base_net', vapp_name=cascaded_image)    #create vapp network
            self.create_vapp_network(network_name='ext_net', vapp_name=cascaded_image)
@@ -746,7 +737,7 @@ class VcloudCloudInstaller:
 
 
         if result == False :
-            exit(1)
+            LOG.info("create vpn vm failed.")
         else :
 
             self.create_vapp_network(network_name='ext_net', vapp_name=vpn_image)    #create vapp network

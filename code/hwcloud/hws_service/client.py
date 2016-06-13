@@ -1,11 +1,11 @@
 __author__ = 'Administrator'
 
 from oslo.config import cfg
-from hwcloud.hws_service.ecs_service import ECSService
-from hwcloud.hws_service.evs_service import EVSService
-from hwcloud.hws_service.ims_service import IMSService
-from hwcloud.hws_service.vpc_service import VPCService
-from hwcloud.hws_service.vbs_service import VBSService
+from heat.engine.resources.hwcloud.hws_service.ecs_service import ECSService
+from heat.engine.resources.hwcloud.hws_service.evs_service import EVSService
+from heat.engine.resources.hwcloud.hws_service.ims_service import IMSService
+from heat.engine.resources.hwcloud.hws_service.vpc_service import VPCService
+from heat.engine.resources.hwcloud.hws_service.vbs_service import VBSService
 
 hws_opts = [cfg.StrOpt('ecs_host', help='ecs_host', default='ecs.cn-north-1.myhwclouds.com.cn'),
             cfg.StrOpt('evs_host', help='evs_host', default='evs.cn-north-1.myhwclouds.com.cn'),

@@ -7,29 +7,21 @@ from heat.engine.resources.hwcloud.hws_service.vpc_service import VPCService
 from heat.engine.resources.hwcloud.hws_service.vbs_service import VBSService
 import pdb
 
-
 class HWSClient(object):
-    def __init__(self, cloud_info):
-        self.ak = cloud_info['access_key']
-        self.sk = cloud_info['secret_key']
-        self.protocol = cloud_info['protocol']
-        self.port = cloud_info['port']
-        self.region = cloud_info['region']
-        self.host = cloud_info['host']
-        self.project_id = cloud_info['project_id']
+    def __init__(self, ak, sk, region, protocol, host, port):
 
-        host_endpoint = ".".join([self.region, self.host, 'com.cn' ])
-        self.ecs_host = 'ecs.' + host_endpoint
-        self.evs_host = 'evs.' + host_endpoint
-        self.ims_host = 'ims.' + host_endpoint
-        self.vpc_host = 'vpc.' + host_endpoint
-        self.vbs_host = 'vbs.' + host_endpoint
+        host_endpoint = ".".join([region, host, 'com.cn' ])
+        ecs_host = 'ecs.' + host_endpoint
+        evs_host = 'evs.' + host_endpoint
+        ims_host = 'ims.' + host_endpoint
+        vpc_host = 'vpc.' + host_endpoint
+        vbs_host = 'vbs.' + host_endpoint
 
-        self.ecs = ECSService(self.ak, self.sk, self.region, self.protocol, self.ecs_host, self.port)
-        self.evs = EVSService(self.ak, self.sk, self.region, self.protocol, self.evs_host, self.port)
-        self.ims = IMSService(self.ak, self.sk, self.region, self.protocol, self.ims_host, self.port)
-        self.vpc = VPCService(self.ak, self.sk, self.region, self.protocol, self.vpc_host, self.port)
-        self.vbs = VBSService(self.ak, self.sk, self.region, self.protocol, self.vbs_host, self.port)
+        self.ecs = ECSService(ak, sk, region, protocol, ecs_host, port)
+        self.evs = EVSService(ak, sk, region, protocol, evs_host, port)
+        self.ims = IMSService(ak, sk, region, protocol, ims_host, port)
+        self.vpc = VPCService(ak, sk, region, protocol, vpc_host, port)
+        self.vbs = VBSService(ak, sk, region, protocol, vbs_host, port)
 
 if __name__ == '__main__':
     ak = '5DTFPKOQFEIN4T7EC2BM'

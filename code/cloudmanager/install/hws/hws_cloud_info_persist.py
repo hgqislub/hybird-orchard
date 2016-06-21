@@ -14,6 +14,19 @@ class HwsCloudInfoPersist:
         }
         self.info_handler.write_unit_info("vpc", vpc_info)
 
+    def write_subnets_cidr(self, vpc_cidr,
+                           external_api_cidr,
+                           tunnel_bearing_cidr,
+                           internal_base_cidr,
+                           debug_cidr):
+        subnets_cidr_info = {
+            "vpc_cidr": vpc_cidr,
+            "external_api_cidr": external_api_cidr,
+            "tunnel_bearing_cidr": tunnel_bearing_cidr,
+            "internal_base_cidr": internal_base_cidr,
+            "debug_cidr": debug_cidr
+        }
+        self.info_handler.write_unit_info("subnets_cidr", subnets_cidr_info)
     def write_subnets_info(self, external_api_subnet, tunnel_bearing_subnet, internal_base_subnet, debug_subnet):
         subnets_info = {
             "external_api": external_api_subnet,

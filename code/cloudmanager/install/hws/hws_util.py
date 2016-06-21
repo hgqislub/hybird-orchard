@@ -41,9 +41,9 @@ def stop_hws_gateway(host_ip, user, password):
                     )
 
 class HwsInstaller(object):
-    def __init__(self, cloud_info):
-        self.hws_client = HWSClient(cloud_info)
-        self.project_id = cloud_info["project_id"]
+    def __init__(self, ak, sk, region, protocol, host, port, project_id):
+        self.hws_client = HWSClient(ak, sk, region, protocol, host, port)
+        self.project_id = project_id
 
     @RetryDecorator(max_retry_count=MAX_RETRY,
                 raise_exception=InstallCascadedFailed(

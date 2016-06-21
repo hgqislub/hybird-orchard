@@ -15,4 +15,3 @@ cps template-ext-params-update --parameter hws.vpc_host=vpc.cn-north-1.myhwcloud
 cps template-ext-params-update --parameter hws.service_region=cn-north-1 --service cinder cinder-volume
 cps template-ext-params-update --parameter hws.resource_region=cn-north-1a --service cinder cinder-volume
 cps commit
-    

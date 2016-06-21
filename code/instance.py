@@ -1404,7 +1404,7 @@ class HwsCloud(resource.Resource):
         self.cloud_params['data_center'] = self.properties.get(self.DATA_CENTER)
         self.cloud_params['azname'] = self.properties.get(self.AZNAME)
         self.cloud_params['project_info'] = self.properties.get(self.PROJECT_INFO)
-        self.cloud_params['proxy'] = self.properties.get(self.PROXY)
+        self.cloud_params['proxy_info'] = self.properties.get(self.PROXY)
         self.cloud_params['cascaded_info'] = self.properties.get(self.CASCADED)
         self.cloud_params['vpn_info'] = self.properties.get(self.VPN)
         self.cloud_params['network'] = self.properties.get(self.NETWORK)

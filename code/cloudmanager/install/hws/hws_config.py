@@ -15,6 +15,7 @@ from heat.engine.resources.cloudmanager.exception import *
 from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
 from hws_cloud_info_persist import *
 from hws_util import *
+import heat.engine.resources.cloudmanager.util.conf_util as conf_util
 
 LOG = logging.getLogger(__name__)
 MAX_RETRY = 10
@@ -27,6 +28,10 @@ class HwsConfig(object):
 
     def initialize(self, cloud_params, install_info):
         self.cloud_params = cloud_params
+
+        default_params = conf_util.read_conf(constant.Cascading.HWS_CONF_FILE)
+        self.cloud_params["project_info"]["host"]= default_params["project_info"]["host"]
+
         self.install_info = install_info
         self.proxy_info = self.install_info["proxy_info"]
         cloud_id = self.install_info["cloud_id"]
@@ -83,7 +88,6 @@ class HwsConfig(object):
     def config_vpn(self):
         self._config_cascading_vpn()
         self._config_cascaded_vpn()
-
 
     def _enable_network_cross(self):
         cloud_id = self.install_info["cloud_id"]
@@ -272,7 +276,7 @@ class HwsConfig(object):
         self._config_cascading_route()
         self._config_cascaded_route()
 
-        self._enable_network_cross()
+
 
 
 
@@ -337,7 +341,6 @@ class HwsConfig(object):
     def config_cascading(self):
         #TODO(lrx):remove v2v_gw
         LOG.info("config cascading")
-        self.remove_keystone()
         cascading_cf = CascadingConfiger(
                 cascading_ip=self.install_info["cascading_info"]["external_api_ip"],
                 user=constant.Cascading.ROOT,
@@ -521,8 +524,6 @@ class HwsConfig(object):
                            "rabbit_host_ip":self.install_info["cascaded_info"]["internal_base_ip"],
                            "security_group_vpc":self.install_info["cascaded_subnets_info"]["security_group_id"]
                             })
-
-                self._restart_nova_computer(host_ip, user, passwd)
                 return True
             except Exception as e:
                 LOG.error("config hws error, error: %s"
@@ -530,37 +531,6 @@ class HwsConfig(object):
                 continue
 
         return True
-
-    def update_aggregate(self):
-        cascaded_aggregate = self.install_info['cascaded_info']["aggregate"]
-        for i in range(3):
-            try:
-                execute_cmd_without_stdout(
-                    host=self.install_info["cascaded_info"]["public_ip"],
-                    user=constant.HwsConstant.ROOT,
-                    password=constant.HwsConstant.ROOT_PWD,
-                    cmd='source /root/adminrc;'
-                        'nova aggregate-update 1 %(name)s %(aggregate)s'
-                        % {"name": cascaded_aggregate,
-                           "aggregate": cascaded_aggregate})
-                break
-            except exception.SSHCommandFailure as e:
-                LOG.error("update cascaded aggregate error, aggregate: "
-                             "%s, error: %s"
-                             % (cascaded_aggregate, e.format_message()))
-                time.sleep(1)
-
-    @staticmethod
-    def _restart_nova_computer(host_ip, user, passwd):
-        execute_cmd_without_stdout(
-            host=host_ip, user=user, password=passwd,
-            cmd='source /root/adminrc;'
-                'cps host-template-instance-operate --action stop --service nova nova-compute')
-        time.sleep(1)
-        execute_cmd_without_stdout(
-            host=host_ip, user=user, password=passwd,
-            cmd='source /root/adminrc;'
-                'cps host-template-instance-operate --action start --service nova nova-compute')
 
     @staticmethod
     def _deploy_patches(host_ip, user, passwd):
@@ -588,8 +558,6 @@ class HwsConfig(object):
                 cascaded_domain=self.install_info['cascaded_info']['domain'],
                 )
 
-        self.update_aggregate()
-
     def _config_storage(self, host, user, password, cascading_domain,
                         cascaded_domain):
         # 1. create env file and config cinder on cascaded host
@@ -614,6 +582,12 @@ class HwsConfig(object):
                 continue
 
         return True
+
+    def config_extnet(self):
+        self._config_extnet()
+
+    def _config_extnet(self):
+        self._enable_network_cross()
 
     def remove_existed_cloud(self):
         if self.install_info is None:

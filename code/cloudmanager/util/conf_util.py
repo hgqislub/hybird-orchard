@@ -1,4 +1,3 @@
-import os
 
 from heat.openstack.common import log as logging
 import json
@@ -9,7 +8,6 @@ def read_conf(file_path):
     fd = None
     conf = {}
     try:
-
         fd = open(file_path, 'r+')
         tmp = fd.read()
         conf = json.loads(tmp)
@@ -115,6 +113,8 @@ class CloudInfoHandler:
                          % (self.cloud_id, e.message))
         finally:
             self._file_lock.release()
+
+
 
 if __name__ == '__main__':
     read_conf("D:\\test.txt")

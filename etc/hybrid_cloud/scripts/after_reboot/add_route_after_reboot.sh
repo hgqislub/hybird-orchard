@@ -1,4 +1,12 @@
 #!/bin/bash
+count=`ps -ef | grep "add_router_after_reboot.sh" | grep -v grep | awk '{print $2}' | wc -w`
+echo count=$count
+if [ $count -gt 2 ]
+then
+    echo "add route progress existed"
+    exit 0
+fi
+
 let i=0
 until ifconfig external_api |grep 'inet addr'
 do
@@ -16,3 +24,4 @@ then
         sh $file
     done
 fi
+

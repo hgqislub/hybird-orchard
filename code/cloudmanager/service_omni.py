@@ -2,8 +2,8 @@
 import sys
 sys.path.append('..')
 
-import os
 import pdb
+import threading
 from heat.openstack.common import log as logging
 import install.hws.hws_install as hws_installer
 import install.hws.hws_config as hws_config
@@ -37,6 +37,13 @@ class Cloud(object):
         self.cloud_type = cloud_params['cloud_type']
         self.installer = None
         self.configer = None
+
+        self.config_vpn_thread = None
+        self.config_cascading_thread = None
+        self.config_cascaded_thread = None
+        self.config_proxy_thread = None
+        self.config_patch_thread = None
+
         self.init_installer(cloud_params)
 
     def init_installer(self,cloud_params):
@@ -77,14 +84,42 @@ class Cloud(object):
         self.installer.get_cloud_info()
 
     def register_cloud(self):
-        self.configer.config_vpn()
-        self.configer.config_cascading()
-        self.configer.config_cascaded()
+        self.config_vpn_thread = threading.Thread(
+                target=self.configer.config_vpn)
+        self.config_cascading_thread = threading.Thread(
+                target=self.configer.config_cascading)
+        self.config_cascaded_thread = threading.Thread(
+                target=self.configer.config_cascaded)
+        self.config_proxy_thread = threading.Thread(
+                target=self.configer.config_proxy)
+        self.config_patch_thread = threading.Thread(
+                target=self.configer.config_patch)
+
+        self.start_config_thread()
+        self.join_config_thread()
+        #self.configer.config_vpn()
+        #self.configer.config_cascading()
+        #self.configer.config_cascaded()
+        #self.configer.config_proxy()
+        #self.configer.config_patch()
+
         self.configer.config_route()
-        self.configer.config_proxy()
-        self.configer.config_patch()
         self.configer.config_storge()
-        #self.configer.config_extnet()
+        self.configer.config_extnet()
+
+    def start_config_thread(self):
+        self.config_vpn_thread.start()
+        self.config_cascading_thread.start()
+        self.config_cascaded_thread.start()
+        self.config_proxy_thread.start()
+        self.config_patch_thread.start()
+
+    def join_config_thread(self):
+        self.config_vpn_thread.join()
+        self.config_cascading_thread.join()
+        self.config_cascaded_thread.join()
+        self.config_proxy_thread.join()
+        self.config_patch_thread.join()
 
     def unregister_cloud(self):
         self.configer.remove_existed_cloud()

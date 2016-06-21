@@ -57,6 +57,7 @@ class Cascading(object):
     ENABLE_OPENSTACK_SERVICE = "enable_openstack_service.sh"
     UPDATE_PROXY_PARAMS = "modify_proxy_params.sh"
     ENV_FILE = "/home/hybrid_cloud/conf/environment.conf"
+    HWS_CONF_FILE = "/home/hybrid_cloud/conf/hws_install.conf"
 
 class AfterRebootConstant(object):
     REMOTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/after_reboot/"

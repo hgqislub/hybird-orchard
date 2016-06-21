@@ -4,8 +4,7 @@ __author__ = 'q00222219@huawei'
 import threading
 
 from awscloud import AwsCloud
-from environmentinfo import *
-from commonutils import *
+from heat.engine.resources.cloudmanager.util.commonutils import *
 
 
 def aws_cloud_2_dict(obj):

@@ -50,12 +50,7 @@ def distribute_proxy():
                         allocated_proxy_nums.append(num)
 
         if 0 == len(free_proxy_list):
-            aws_installer.install_aws_proxy()
             return None
-
-        #TODO£¨lrx£©:deprecated without aws,modify later
-        # if 1 == len(free_proxy_list):
-        #     aws_installer.install_aws_proxy()
 
         right_proxy = free_proxy_list[0]
         num = 1

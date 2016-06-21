@@ -6,7 +6,7 @@ from heat.openstack.common import log as logging
 
 import commonutils
 import constant
-import exception
+import cloud_manager_exception
 LOG = logging.getLogger(__name__)
 
 class CascadingConfiger(object):

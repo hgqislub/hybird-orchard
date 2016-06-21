@@ -7,13 +7,14 @@ import os
 import time
 import socket
 from heat.openstack.common import log as logging
-from heat.engine.resources.cloudmanager.exception import *
-from heat.engine.resources.cloudmanager.environmentinfo import *
+import heat.engine.resources.cloudmanager.util.conf_util as conf_util
+from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
 import vcloud_proxy_install as proxy_installer
 import vcloud_cloudinfo as data_handler
 import json
 import heat.engine.resources.cloudmanager.region_mapping
-from heat.engine.resources.cloudmanager.subnet_manager import SubnetManager
+import heat.engine.resources.cloudmanager.util.constant as constant
+from heat.engine.resources.cloudmanager.util.subnet_manager import SubnetManager
 from vcloudcloudpersist import VcloudCloudDataHandler
 from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
 from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
@@ -173,7 +174,7 @@ class VcloudCloudInstaller:
 
     def _read_env(self):
         try:
-            env_info = read_environment_info(self.cloud_type)
+            env_info = conf_util.read_conf(constant.Cascading.ENV_FILE)
             self.env = env_info["env"]
             self.cascading_api_ip = env_info["cascading_api_ip"]
             self.cascading_domain = env_info["cascading_domain"]

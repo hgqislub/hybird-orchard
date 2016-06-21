@@ -2,19 +2,21 @@
 
 import os
 import pdb
-from heat.openstack.common import log as logging
-from heat.engine.resources.cloudmanager.vpn_configer import VpnConfiger
-from heat.engine.resources.cloudmanager.vpn import VPN
-import heat.engine.resources.cloudmanager.constant as constant
-from vcloudcloudpersist import VcloudCloudDataHandler
 import threading
 import time
-import heat.engine.resources.cloudmanager.proxy_manager
-from heat.engine.resources.cloudmanager.cascading_configer import CascadingConfiger
+
+from heat.openstack.common import log as logging
+from heat.engine.resources.cloudmanager.util.vpn_configer import VpnConfiger
+from heat.engine.resources.cloudmanager.util.vpn import VPN
+import heat.engine.resources.cloudmanager.util.constant as constant
+from vcloudcloudpersist import VcloudCloudDataHandler
+
+import heat.engine.resources.cloudmanager.util.proxy_manager as proxy_manager
+from heat.engine.resources.cloudmanager.util.cascading_configer import CascadingConfiger
 from vcloud_cascaded_configer import CascadedConfiger
 
-from heat.engine.resources.cloudmanager.commonutils import *
-import heat.engine.resources.cloudmanager.exception as exception
+from heat.engine.resources.cloudmanager.util.commonutils import *
+from heat.engine.resources.cloudmanager.util.clould_manager_exception import *
 
 
 LOG = logging.getLogger(__name__)
@@ -194,7 +196,7 @@ class VcloudCloudConfig:
                        "api_gw":api_gw,
                        "access_cloud_tunnel_subnet": access_cloud_tunnel_subnet,
                        "tunnel_gw": tunnel_gw})
-        except exception.SSHCommandFailure:
+        except SSHCommandFailure:
             LOG.error("add vpn route error, host: %s" % host_ip)
             return False
         return True
@@ -213,7 +215,7 @@ class VcloudCloudConfig:
                        "script": constant.VpnConstant.ADD_VPN_ROUTE_SCRIPT,
                        "access_cloud_tunnel_subnet": access_cloud_tunnel_subnet,
                        "tunnel_gw": tunnel_gw})
-        except exception.SSHCommandFailure:
+        except SSHCommandFailure:
             LOG.error("add vpn route error, host: %s" % host_ip)
             return False
         return True
@@ -282,7 +284,7 @@ class VcloudCloudConfig:
                     cmd="cps role-host-add --host %(proxy_host_name)s dhcp;"
                         "cps commit"
                         % {"proxy_host_name": proxy_info["id"]})
-            except exception.SSHCommandFailure:
+            except SSHCommandFailure:
                 LOG.error("config proxy error, try again...")
         return True
 
@@ -295,7 +297,7 @@ class VcloudCloudConfig:
                 proxy_info = proxy_manager.distribute_proxy(self.installer)
             else:
                 return proxy_info
-        raise exception.ConfigProxyFailure(error="check proxy config result failed")
+        raise ConfigProxyFailure(error="check proxy config result failed")
 
     def config_patch(self):
         #TODO(lrx):modify to vcloud patch

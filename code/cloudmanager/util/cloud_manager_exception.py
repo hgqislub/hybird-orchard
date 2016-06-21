@@ -26,6 +26,8 @@ class CloudManagerException(Exception):
     def format_message(self):
         return self.args[0]
 
+class ReadProxyDataFailure(CloudManagerException):
+    msg_fmt = "failed to read proxy data, error: %(error)s"
 
 class InstallCascadingFailed(CloudManagerException):
     msg_fmt = "failed to install cascading openstack, " \
@@ -59,4 +61,15 @@ class ScpFileToHostFailure(CloudManagerException):
               " file_name: %(file_name)s, local_dir: %(local_dir)s," \
               " remote_dir: %(remote_dir)s, error: %(error)s"
 
+class PersistCloudInfoFailure(CloudManagerException):
+    msg_fmt = "failed to Persist cloud info, error: %(error)s"
+
+class ReadCloudInfoFailure(CloudManagerException):
+    msg_fmt = "failed to read cloud info, error: %(error)s"
+
+class ConfigCascadedHostFailure(CloudManagerException):
+    msg_fmt = "failed to config cascaded host: %(error)s"
+
+class ConfigProxyFailure(CloudManagerException):
+    msg_fmt = "failed to config proxy: %(error)s"
 

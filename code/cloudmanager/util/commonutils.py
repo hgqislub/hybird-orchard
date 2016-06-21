@@ -7,7 +7,7 @@ sys.path.append('..')
 import os
 import time
 import sshclient
-from exception import *
+from cloud_manager_exception import *
  
 
 from heat.openstack.common import log as logging

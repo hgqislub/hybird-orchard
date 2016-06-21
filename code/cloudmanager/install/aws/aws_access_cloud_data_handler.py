@@ -1,8 +1,7 @@
 import threading
 import os
 import json
-import log as logger
-
+from heat.openstack.common import log as logger
 _aws_access_cloud_data_file = os.path.join("/home/hybrid_cloud/data",
                                            "aws_access_cloud_install.data")
 _aws_access_cloud_data_file_lock = threading.Lock()

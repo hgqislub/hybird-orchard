@@ -5,8 +5,8 @@ __author__ = 'q00222219@huawei'
 import boto.ec2
 import boto.ec2.networkinterface as ec2_net_interface
 import boto.vpc
-from retry_decorator import RetryDecorator
-from cloud_manager_exception import *
+from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
+from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
 
 
 class AWSInterface(object):

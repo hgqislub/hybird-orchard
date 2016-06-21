@@ -6,9 +6,10 @@ from heat.engine.resources.cloudmanager.util.subnet_manager import SubnetManager
 from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
 import heat.engine.resources.cloudmanager.util.proxy_manager as proxy_manager
 import heat.engine.resources.cloudmanager.util.constant as constant
+from region_mapping import *
+import aws_util
+import aws_access_cloud_data_handler as data_handler
 
-from hws_util import *
-from hws_cloud_info_persist import *
 import pdb
 
 LOG = logging.getLogger(__name__)
@@ -18,40 +19,35 @@ VPN_TAIL_IP = "254"
 CASCADED_TAIL_IP = "4"
 ROOT_VOLUME_TYPE = 'SATA'
 
-class HwsCascadedInstaller(object):
+class AwsCascadedInstaller(object):
     def __init__(self, cloud_params):
         self._init_params(cloud_params)
         self._read_env()
         self._read_install_info()
 
-        start_hws_gateway(self.cascading_api_ip, constant.Cascading.ROOT,
-                           constant.Cascading.ROOT_PWD)
-
     def _init_params(self, cloud_params):
         self.cloud_params = cloud_params
+
+        self.cloud_id = "@".join(["AWS", self.cloud_params['azname']])
+
+        self.region = get_region_id(cloud_params["region"])
+        self.az = cloud_params["availabilityzone"]
+        access_key = cloud_params["access_key"]
+        secret_key = cloud_params["secret_key"]
+
+        self.installer = aws_util.AWSInstaller(access_key,
+                                               secret_key, self.region, self.az)
+
         self._read_default_conf()
-        self.cloud_id = "@".join(["HWS", self.cloud_params['azname']])
-
         self.cascaded_image = self.default_cascaded_image
-        self.cascaded_flavor = self.default_cascaded_flavor
+        self.cascaded_vm_type = self.default_cascaded_flavor
         self.vpn_image = self.default_vpn_image
-        self.vpn_flavor = self.default_vpn_flavor
-        self.availability_zone = self.cloud_params["project_info"]["availability_zone"]
-
-        project_info = self.cloud_params["project_info"]
-        ak = project_info["access_key"]
-        sk = project_info["secret_key"]
-        region = project_info["region"]
-        project_id = project_info["project_id"]
-        port = self.default_port
-        host = self.default_host
-        protocol = self.default_protocol
-        self.installer = HwsInstaller(ak, sk, region, protocol, host, port, project_id)
-
-        self.install_data_handler = \
-            HwsCloudInfoPersist(constant.HwsConstant.INSTALL_INFO_FILE, self.cloud_id)
-        self.cloud_info_handler = \
-            HwsCloudInfoPersist(constant.HwsConstant.CLOUD_INFO_FILE, self.cloud_id)
+        self.vpn_vm_type = self.default_vpn_flavor
+        self.hynode_image = self.default_hynode_image
+        self.v2v_image = self.default_v2v_image
+        self.v2v_vm_type = self.default_v2v_flavor
+        self.ceph_image = self.default_ceph_image
+        self.ceph_vm_type = self.default_ceph_flavor
 
     def _read_env(self):
         try:
@@ -78,15 +74,18 @@ class HwsCascadedInstaller(object):
 
     def _read_default_conf(self):
         try:
-            self.default_params = conf_util.read_conf(constant.Cascading.HWS_CONF_FILE)
-            self.default_protocol = self.default_params["project_info"]["protocol"]
-            self.default_port = self.default_params["project_info"]["port"]
-            self.default_host = self.default_params["project_info"]["host"]
+            self.default_params = conf_util.read_conf(constant.Cascading.AWS_CONF_FILE)
             image_info = self.default_params["image"]
             self.default_cascaded_image = image_info["cascaded_image"]
             self.default_cascaded_flavor = image_info["cascaded_flavor"]
             self.default_vpn_image = image_info["vpn_image"]
             self.default_vpn_flavor = image_info["vpn_flavor"]
+            self.default_v2v_image =  image_info["v2v_image"]
+            self.default_v2v_flavor =  image_info["v2v_flavor"]
+            self.default_ceph_image = image_info["ceph_image"]
+            self.default_ceph_flavor = image_info["ceph_flavor"]
+            self.default_hynode_image = image_info["hynode_image"]
+
             network = self.default_params["network"]
             self.default_vpc_cidr = network["vpc_cidr"]
             self.default_external_api_cidr = network["external_api_cidr"]
@@ -103,86 +102,180 @@ class HwsCascadedInstaller(object):
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
-    def _create_vpc(self):
-        name = self.cloud_params["azname"]+"_vpc"
-        cidr = self.vpc_cidr
+    def _read_install_info(self):
+        self.vpc_id = None
+        self.debug_subnet_cidr = None
+        self.debug_subnet_id = None
+        self.base_subnet_cidr = None
+        self.base_subnet_id = None
+        self.api_subnet_cidr = None
+        self.api_subnet_id = None
+        self.tunnel_subnet_cidr = None
+        self.tunnel_subnet_id = None
+        self.ceph_subnet_cidr = None
+        self.ceph_subnet_id = None
+        self.gateway_id = None
+        self.rtb_id = None
 
-        if self.vpc_id is None:
-            self.vpc_id = self.installer.create_vpc(name, cidr)
-        try:
-            if self.security_group_id is None:
-                security_group_id = self.installer.get_security_group(self.vpc_id)
-                self.installer.create_security_group_rule(
-                    security_group_id, "ingress", "IPv4")
-                self.security_group_id = security_group_id
-        finally:
-            self.install_data_handler.write_vpc_info(self.vpc_id, name, cidr, self.security_group_id)
+        self.cascaded_vm = None
+        self.cascaded_vm_id = None
+        self.cascaded_debug_ip = None
+        self.cascaded_debug_interface_id = None
+        self.cascaded_base_ip = None
+        self.cascaded_base_interface_id = None
+        self.cascaded_api_ip = None
+        self.cascaded_api_interface_id = None
+        self.cascaded_tunnel_ip = None
+        self.cascaded_tunnel_interface_id = None
+        self.cascaded_eip_public_ip = None
+        self.cascaded_eip_allocation_id = None
 
-    def _delete_vpc(self):
+        self.vpn_vm = None
+        self.vpn_vm_id = None
+        self.vpn_api_ip = None
+        self.vpn_tunnel_ip = None
+        self.vpn_eip_public_ip = None
+        self.vpn_eip_allocation_id = None
+        self.vpn_api_interface_id = None
+        self.vpn_tunnel_interface_id = None
+
+        self.v2v_vm_id = None
+        self.v2v_ip = None
+
+        self.hynode_image_id = None
+
+        self.ceph_deploy_vm_id = None
+        self.ceph_deploy_ip = None
+        self.ceph_deploy_interface_id = None
+
+        self.ceph_node1_vm_id = None
+        self.ceph_node1_ip = None
+        self.ceph_node1_interface_id = None
+
+        self.ceph_node2_vm_id = None
+        self.ceph_node2_ip = None
+        self.ceph_node2_interface_id = None
+
+        self.ceph_node3_vm_id = None
+        self.ceph_node3_ip = None
+        self.ceph_node3_interface_id = None
+
+        self.ext_net_eips = {}
+
+        cloud_info = data_handler.get_aws_access_cloud(self.cloud_id)
+        if not cloud_info:
+            return
+
+        if "vpc" in cloud_info.keys():
+            vpc_info = cloud_info["vpc"]
+            self.vpc_id = vpc_info["vpc_id"]
+            self.debug_subnet_cidr = vpc_info["debug_subnet_cidr"]
+            self.debug_subnet_id = vpc_info["debug_subnet_id"]
+            self.base_subnet_cidr = vpc_info["base_subnet_cidr"]
+            self.base_subnet_id = vpc_info["base_subnet_id"]
+            self.api_subnet_cidr = vpc_info["api_subnet_cidr"]
+            self.api_subnet_id = vpc_info["api_subnet_id"]
+            self.tunnel_subnet_cidr = vpc_info["tunnel_subnet_cidr"]
+            self.tunnel_subnet_id = vpc_info["tunnel_subnet_id"]
+            self.ceph_subnet_cidr = vpc_info["ceph_subnet_cidr"]
+            self.ceph_subnet_id = vpc_info["ceph_subnet_id"]
+            self.gateway_id = vpc_info["gateway_id"]
+            self.rtb_id = vpc_info["rtb_id"]
+
+        if "cascaded" in cloud_info.keys():
+            cascaded_info = cloud_info["cascaded"]
+            self.cascaded_vm_id = cascaded_info["vm_id"]
+            self.cascaded_debug_ip = cascaded_info["debug_ip"]
+            self.cascaded_debug_interface_id = cascaded_info["debug_interface_id"]
+            self.cascaded_base_ip = cascaded_info["base_ip"]
+            self.cascaded_base_interface_id = cascaded_info["base_interface_id"]
+            self.cascaded_api_ip = cascaded_info["api_ip"]
+            self.cascaded_api_interface_id = cascaded_info["api_interface_id"]
+            self.cascaded_tunnel_ip = cascaded_info["tunnel_ip"]
+            self.cascaded_tunnel_interface_id = cascaded_info["tunnel_interface_id"]
+            self.cascaded_eip_public_ip = cascaded_info["eip_public_ip"]
+            self.cascaded_eip_allocation_id = cascaded_info["eip_allocation_id"]
+
+        if "vpn" in cloud_info.keys():
+            vpn_info = cloud_info["vpn"]
+            self.vpn_vm_id = vpn_info["vm_id"]
+            self.vpn_api_ip = vpn_info["api_ip"]
+            self.vpn_tunnel_ip = vpn_info["tunnel_ip"]
+            self.vpn_eip_public_ip = vpn_info["eip_public_ip"]
+            self.vpn_eip_allocation_id = vpn_info["eip_allocation_id"]
+            self.vpn_api_interface_id = vpn_info["api_interface_id"]
+            self.vpn_tunnel_interface_id = vpn_info["tunnel_interface_id"]
+
+        if "v2v_gateway" in cloud_info.keys():
+            v2v_info = cloud_info["v2v_gateway"]
+            self.v2v_vm_id = v2v_info["vm_id"]
+            self.v2v_ip = v2v_info["ip"]
+
+        if "hynode" in cloud_info.keys():
+            hynode_info = cloud_info["hynode"]
+            self.hynode_image_id = hynode_info["image_id"]
+
+        if "ceph_cluster" in cloud_info.keys():
+            ceph_cluster_info = cloud_info["ceph_cluster"]
+            self.ceph_deploy_vm_id = ceph_cluster_info["deploy_vm_id"]
+            self.ceph_deploy_ip = ceph_cluster_info["deploy_ip"]
+            self.ceph_node1_vm_id = ceph_cluster_info["node1_vm_id"]
+            self.ceph_node1_ip = ceph_cluster_info["node1_ip"]
+            self.ceph_node2_vm_id = ceph_cluster_info["node2_vm_id"]
+            self.ceph_node2_ip = ceph_cluster_info["node2_ip"]
+            self.ceph_node3_vm_id = ceph_cluster_info["node3_vm_id"]
+            self.ceph_node3_ip = ceph_cluster_info["node3_ip"]
+
+        if "ext_net_eips" in cloud_info.keys():
+            self.ext_net_eips = cloud_info["ext_net_eips"]
+
+    def install_vpc(self, vpc_cidr, debug_cidr, base_cidr,
+                    api_cidr, tunnel_cidr, ceph_cidr, green_ips):
         if self.vpc_id:
-            self.installer.delete_vpc(self.vpc_id)
+            return
 
-    def _create_subnet(self):
-        az = self.availability_zone
-        self.external_api_gateway = self._alloc_gateway_ip(self.external_api_cidr)
-        tunnel_bearing_gateway = self._alloc_gateway_ip(self.tunnel_bearing_cidr)
-        internal_base_gateway = self._alloc_gateway_ip(self.internal_base_cidr)
-        debug_gateway = self._alloc_gateway_ip(self.debug_cidr)
+        # install vpc
+        vpc = self.installer.create_vpc(vpc_cidr)
+        self.vpc_id = vpc.id
+        self.installer.associate_dhcp_options("default", vpc.id)
 
-        external_api_info = {
-                "id": None
-            }
-        tunnel_bearing_info = {
-                "id": None
-            }
-        internal_base_info = {
-                "id": None
-            }
-        debug_info = {
-                "id": None
-            }
-        try:
-            if self.external_api_id is None:
-                self.external_api_id = self.installer.create_subnet("external_api",
-                                    self.external_api_cidr, az, self.external_api_gateway,
-                                    self.vpc_id)
-            if self.tunnel_bearing_id is None:
-                self.tunnel_bearing_id = self.installer.create_subnet("tunnel_bearing",
-                                  self.tunnel_bearing_cidr, az, tunnel_bearing_gateway,
-                                  self.vpc_id)
-            if self.internal_base_id is None:
-                self.internal_base_id = self.installer.create_subnet("internal_base",
-                                  self.internal_base_cidr, az, internal_base_gateway,
-                                  self.vpc_id)
-            if self.debug_id is None:
-                self.debug_id = self.installer.create_subnet("debug",
-                                  self.debug_cidr, az, debug_gateway,
-                                  self.vpc_id)
+        # add internet gateway
+        self.gateway_id = self.installer.create_internet_gateway()
+        self.installer.attach_internet_gateway(self.gateway_id, self.vpc_id)
 
-            external_api_info = {
-                "id": self.external_api_id
-            }
-            tunnel_bearing_info = {
-                "id": self.tunnel_bearing_id
-            }
-            internal_base_info = {
-                "id": self.internal_base_id
-            }
-            debug_info = {
-                "id": self.debug_id
-            }
-        finally:
-            self.install_data_handler.write_subnets_info(external_api_info, tunnel_bearing_info, internal_base_info, debug_info)
+        # get route table id, every vpc only have one route table.
+        route_tables = self.installer.get_all_route_tables(self.vpc_id)
+        self.rtb_id = route_tables[0].id
+        self.installer.create_route(self.rtb_id, "0.0.0.0/0",
+                                    gateway_id=self.gateway_id)
 
-    def _delete_subnet(self):
-        if self.external_api_id:
-            self.installer.delete_subnet(self.vpc_id, self.external_api_id)
-        if self.tunnel_bearing_id:
-            self.installer.delete_subnet(self.vpc_id, self.tunnel_bearing_id)
-        if self.internal_base_id:
-            self.installer.delete_subnet(self.vpc_id, self.internal_base_id)
-        if self.debug_id:
-            self.installer.delete_subnet(self.vpc_id, self.debug_id)
+        # install subnet
+        self.debug_subnet_cidr = debug_cidr
+        self.debug_subnet_id = self.installer.create_subnet(self.vpc_id,
+                                                            debug_cidr)
+        self.base_subnet_cidr = base_cidr
+        self.base_subnet_id = self.installer.create_subnet(self.vpc_id,
+                                                           base_cidr)
+        self.api_subnet_cidr = api_cidr
+        self.api_subnet_id = self.installer.create_subnet(self.vpc_id,
+                                                          api_cidr)
+        self.tunnel_subnet_cidr = tunnel_cidr
+        self.tunnel_subnet_id = self.installer.create_subnet(self.vpc_id,
+                                                             tunnel_cidr)
+        self.ceph_subnet_cidr = ceph_cidr
+        self.ceph_subnet_id = self.api_subnet_id
+
+        for ip in green_ips:
+            self.add_security("%s/32" % ip)
+
+        data_handler.write_vpc(self.cloud_id,
+                               self.vpc_id,
+                               self.debug_subnet_cidr, self.debug_subnet_id,
+                               self.base_subnet_cidr, self.base_subnet_id,
+                               self.api_subnet_cidr, self.api_subnet_id,
+                               self.tunnel_subnet_cidr, self.tunnel_subnet_id,
+                               self.ceph_subnet_cidr, self.ceph_subnet_id,
+                               self.gateway_id, self.rtb_id)
 
     @staticmethod
     def _alloc_gateway_ip(cidr):
@@ -201,7 +294,7 @@ class HwsCascadedInstaller(object):
         ip_list = cidr.split(".")
         cascaded_ip = ".".join([ip_list[0], ip_list[1], ip_list[2], tail_ip])
         return cascaded_ip
-    
+
     def _alloc_vpn_public_ip(self):
         if self.vpn_public_ip_id is None:
             public_ip_name = self.cloud_params["azname"]+"_vpn_public_ip"
@@ -366,71 +459,6 @@ class HwsCascadedInstaller(object):
             mac_address = nic["mac_addr"]
             self.installer.unbound_ip_mac(port_id, mac_address)
 
-    def _create_cascaded_nics(self):
-        ##nic should add one by one to maintain right sequence
-        security_groups = [{"id":self.security_group_id}]
-        if self.internal_base_nic_id is None:
-            job_id = self.installer.add_nics(self.cascaded_server_id, self.internal_base_id,
-                                security_groups, self.cascaded_internal_base_ip)
-            self.internal_base_nic_id = self.installer.block_until_create_nic_success(job_id)
-        if self.external_api_nic_id is None:
-            job_id = self.installer.add_nics(self.cascaded_server_id, self.external_api_id,
-                                security_groups, self.cascaded_external_api_ip)
-            self.external_api_nic_id = self.installer.block_until_create_nic_success(job_id)
-        if self.tunnel_bearing_nic_id is None:
-            job_id = self.installer.add_nics(self.cascaded_server_id, self.tunnel_bearing_id,
-                                security_groups, self.cascaded_tunnel_bearing_ip)
-            self.tunnel_bearing_nic_id = self.installer.block_until_create_nic_success(job_id)
-        if self.port_id_bind_public_ip is None:
-            #pdb.set_trace()
-            external_api_port_id = self.installer.get_external_api_port_id(
-                self.cascaded_server_id, self.external_api_nic_id)
-            self._alloc_cascaded_public_ip()
-            self.installer.bind_public_ip(self.cascaded_public_ip_id, external_api_port_id)
-            self.port_id_bind_public_ip = external_api_port_id
-            #pdb.set_trace()
-            self.installer.reboot(self.cascaded_server_id, "SOFT")
-
-    def _modify_cascaded_external_api(self):
-        #ssh to vpn, then ssh to cascaded through vpn tunnel_bearing_ip
-        self.cascaded_domain = self._distribute_cloud_domain(
-                     self.cloud_params["project_info"]['region'], self.cloud_params['azname'], "--hws"),
-        modify_cascaded_api_domain_cmd = 'cd %(dir)s; ' \
-                    'source /root/adminrc; ' \
-                    'python %(script)s '\
-                    '%(cascading_domain)s %(cascading_api_ip)s '\
-                    '%(cascaded_domain)s %(cascaded_ip)s '\
-                    '%(gateway)s'\
-                    % {"dir": constant.Cascaded.REMOTE_HWS_SCRIPTS_DIR,
-                       "script":constant.Cascaded.MODIFY_CASCADED_SCRIPT_PY,
-                       "cascading_domain": self.cascading_domain,
-                       "cascading_api_ip": self.cascading_api_ip,
-                       "cascaded_domain":  self.cascaded_domain,
-                       "cascaded_ip": self.cascaded_external_api_ip,
-                       "gateway": self.external_api_gateway}
-        #pdb.set_trace()
-        for i in range(180):
-            try:
-                execute_cmd_without_stdout(
-                    host= self.vpn_public_ip,
-                    user=constant.VpnConstant.VPN_ROOT,
-                    password=constant.VpnConstant.VPN_ROOT_PWD,
-                    cmd='cd %(dir)s; python %(script)s '
-                        '%(cascaded_tunnel_ip)s %(user)s %(passwd)s \'%(cmd)s\''
-                    % {"dir": constant.VpnConstant.REMOTE_ROUTE_SCRIPTS_DIR,
-                       "script": constant.VpnConstant.MODIFY_CASCADED_API_SCRIPT,
-                       "cascaded_tunnel_ip": self.cascaded_tunnel_bearing_ip,
-                       "user": constant.HwsConstant.ROOT,
-                       "passwd": constant.HwsConstant.ROOT_PWD,
-                       "cmd": modify_cascaded_api_domain_cmd})
-                return True
-            except Exception as e:
-                if i == 120:
-                    #wait cascaded vm to reboot ok
-                    self.installer.reboot(self.cascaded_server_id, "SOFT")
-                    LOG.error("can not connect to cascaded tunnel ip, error: %s, reboot it" % e.message)
-                    return False
-                time.sleep(1)
 
     def uninstall_cascaded(self):
         self._uninstall_cascaded()

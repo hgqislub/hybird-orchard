@@ -2,11 +2,13 @@
 
 __author__ = 'q00222219@huawei'
 
-import os
-import aws_util
 import json
-import log as logger
+import os
+
+from heat.openstack.common import log as logger
+
 import aws_access_cloud_data_handler as data_handler
+import aws_util
 
 _install_conf = os.path.join("/home/hybrid_cloud/conf",
                              'aws_access_cloud_install.conf')

@@ -7,6 +7,8 @@ import threading
 from heat.openstack.common import log as logging
 import install.hws.hws_install as hws_installer
 import install.hws.hws_config as hws_config
+import install.aws.aws_install as aws_installer
+import install.aws.aws_config as aws_config
 
 LOG = logging.getLogger(__name__)
 
@@ -48,9 +50,12 @@ class Cloud(object):
 
     def init_installer(self,cloud_params):
         if self.cloud_type == 'HWS':
-            self.installer = \
-                hws_installer.HwsCascadedInstaller(cloud_params=cloud_params)
+            self.installer = hws_installer.HwsCascadedInstaller(cloud_params=cloud_params)
             self.configer = hws_config.HwsConfig()
+        elif self.cloud_type == 'AWS':
+            self.installer = aws_installer.AwsCascadedInstaller(cloud_params=cloud_params)
+            self.configer = aws_config.AwsConfig()
+
 
     def cloud_preinstall(self):
         self.installer.cloud_preinstall()

@@ -4,9 +4,9 @@ __author__ = 'q00222219@huawei'
 import time
 from heat.openstack.common import log as logging
 
-import heat.engine.resources.cloudmanager.commonutils as commonutils
-import heat.engine.resources.cloudmanager.constant as constant
-import heat.engine.resources.cloudmanager.exception as exception
+import heat.engine.resources.cloudmanager.util.commonutils as commonutils
+import heat.engine.resources.cloudmanager.util.constant as constant
+import heat.engine.resources.cloudmanager.util.clould_manager_exception as exception
 import pdb
 
 LOG = logging.getLogger(__name__)

@@ -966,7 +966,7 @@ class Instance(resource.Resource):
                 self._check_volume_attached(server, volume_attach_task))
 
 
-class Cloud(resource.Resource):
+class AwsCloud(resource.Resource):
     PROPERTIES = (
         CLOUD_TYPE, REGION_NAME, AVAILABILITY_ZONE, AZNAME, ACCESS_KEY,
         SECRET_KEY,
@@ -1061,32 +1061,23 @@ class Cloud(resource.Resource):
     }
 
     def __init__(self, name, json_snippet, stack):
-        super(Cloud, self).__init__(name, json_snippet, stack)
+        super(AwsCloud, self).__init__(name, json_snippet, stack)
         print "This is for adding clouds"
+        cloud_params = dict()
+        cloud_params["cloud_type"] = self.properties.get(self.CLOUD_TYPE)
+        cloud_params["access_key"] = self.properties.get(self.ACCESS_KEY)
+        cloud_params["secret_key"] = self.properties.get(self.SECRET_KEY)
+        cloud_params["region_name"] = self.properties.get(self.REGION_NAME)
+        cloud_params["availabilityzone"] = self.properties.get(self.AVAILABILITY_ZONE)
+        cloud_params["azname"] = self.properties.get(self.AZNAME)
+        cloud_params["access"] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
+
+        cloud_params["driver_type"] = self.properties.get(self.DRIVER_TYPE)
+
+        self.cloud_manager = service_omni.CloudManager(cloud_params)
 
     def handle_create(self):
-        # import pdb
-        # pdb.set_trace()
-
-        cloud_type = self.properties.get(self.CLOUD_TYPE)
-        access_key_id = self.properties.get(self.ACCESS_KEY)
-        secret_key = self.properties.get(self.SECRET_KEY)
-        region_name = self.properties.get(self.REGION_NAME)
-        az = self.properties.get(self.AVAILABILITY_ZONE)
-        az_alias = self.properties.get(self.AZNAME)
-        access = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
-
-        driver_type = self.properties.get(self.DRIVER_TYPE)
-        if driver_type not in ("agent", "agentless"):
-            driver_type = "agent"
-
-        cloud_manager = service.CloudManager()
-
-        # pdb.set_trace()
-        return cloud_manager.add_aws_access_cloud(
-                region_name=region_name, az=az, az_alias=az_alias,
-                access_key=access_key_id, secret_key=secret_key, access=access,
-                driver_type=driver_type, with_ceph=True)
+        self.cloud_manager.add_cloud()
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         pass
@@ -1469,7 +1460,7 @@ class FusionsphereCloud(resource.Resource):
         pass
 
 
-class CloudVpn(resource.Resource):
+class AwsCloudVpn(resource.Resource):
     PROPERTIES = (
         REGION_NAME, AVAILABILITY_ZONE, ACCESS_KEY,
         SECRET_KEY, ENABLE_NETWORK_CROSS_CLOUDS
@@ -1542,7 +1533,7 @@ class CloudVpn(resource.Resource):
     }
 
     def __init__(self, name, json_snippet, stack):
-        super(CloudVpn, self).__init__(name, json_snippet, stack)
+        super(AwsCloudVpn, self).__init__(name, json_snippet, stack)
         print "CloudVpn init."
 
     def handle_create(self):
@@ -1792,10 +1783,10 @@ def resource_mapping():
     return {
         'AWS::EC2::Instance': Instance,
         'OS::Heat::HARestarter': Restarter,
-        'OS::Heat::Cloud': Cloud,
+        'OS::Heat::AwsCloud': AwsCloud,
+        'OS::Heat::AwsCloudVpn': AwsCloudVpn,
         'OS::Heat::vCloudCloud': vCloudCloud,
         'OS::Heat::FusionsphereCloud': FusionsphereCloud,
-        'OS::Heat::CloudVpn': CloudVpn,
         'OS::Heat::FusionSphereCloudVpn': FusionSphereCloudVpn,
         'OS::Heat::vCloudVpn': vCloudVpn,
         'OS::Heat::HwsCloud': HwsCloud

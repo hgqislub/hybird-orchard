@@ -4,10 +4,9 @@ __author__ = 'q00222219@huawei'
 import time
 from heat.openstack.common import log as logging
 
-import commonutils
-import constant
-import exception
- 
+import heat.engine.resources.cloudmanager.util.commonutils as commontutils
+import heat.engine.resources.cloudmanager.util.constant as constant
+import heat.engine.resources.cloudmanager.util.clould_manager_exception as exception
 
 LOG = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ class CascadedConfiger(object):
 
     def do_config(self):
         start_time = time.time()
-         
+
         LOG.info("start config cascaded, cascaded: %s" % self.domain)
         # wait cascaded tunnel can visit
         commonutils.check_host_status(host=self.tunnel_ip,
@@ -70,14 +69,14 @@ class CascadedConfiger(object):
 
     def _config_az_cascaded(self):
         LOG.info("start config cascaded host, host: %s" % self.tunnel_ip)
-         
+
         gateway = _get_gateway(self.api_ip)
         for i in range(30):
             try:
                 commonutils.execute_cmd_without_stdout(
                     host=self.tunnel_ip,
-                    user=constant.Cascaded.ROOT,
-                    password=constant.Cascaded.ROOT_PWD,
+                    user=self.user,
+                    password=self.password,
                     cmd='cd %(dir)s; python %(script)s '
                         '%(cascading_domain)s %(cascading_api_ip)s '
                         '%(cascaded_domain)s %(cascaded_ip)s '

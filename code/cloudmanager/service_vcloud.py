@@ -2,8 +2,6 @@
 import sys
 sys.path.append('..')
 
-import os
-import pdb
 from heat.openstack.common import log as logging
 import install.vcloud.vcloud_install as vcloudinstaller
 

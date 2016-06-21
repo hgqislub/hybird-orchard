@@ -2,20 +2,17 @@
 
 __author__ = 'q00222219@huawei'
 
-import commonutils
-import exception
-import time
 import threading
-import constant
+
 import awscloud
-import fscloud
+import constant
 import install.aws_access_cloud_installer as cascaded_installer
+
 #import fs_gateway_register
 from vpn import VPN
 from commonutils import *
 from environmentinfo import *
 from awscloudpersist import AwsCloudDataHandler
-from fscloudpersist import FsCloudDataHandler
 import proxy_manager
 from subnet_manager import SubnetManager
 from region_mapping import *
@@ -30,18 +27,6 @@ from heat.openstack.common import log as logging
 LOG = logging.getLogger(__name__)
 
 import os
-fs_gateway_api_url = os.environ.get("FS_GATEWAYCLIENT_BYPASS_URL", "http://127.0.0.1:7027/v1.0")
-
-client_kwargs = {
-        'bypass_url': fs_gateway_api_url,
-        'insecure': True
-}
-
-# from fs_gatewayclient.client import Client as FSClient
-# fsclient = FSClient('1.0', **client_kwargs)
-
-
-
 
 class CloudManager:
     def __init__(self):
@@ -300,247 +285,6 @@ class CloudManager:
 
         return True
 
-
-    # def create_user(self,client, name, password, region, description=''):
-    #     user_kwargs = {
-    #             'name': name,
-    #             'password' : password,
-    #             'region' : region,
-    #             'description': description, # optional
-    #     }
-    #
-    #     return fsclient.users.create(**user_kwargs).id
-
-    # def create_mapping(self,client, resource_name, hybrid_id, cascaded_id, region,  userid=None):
-    #     """
-    #      resource name: [project, image, flavor, network, subnet]
-    #     """
-    #
-    #     mapping_kwargs = {
-    #             'h' + resource_name : hybrid_id,
-    #             resource_name: cascaded_id,
-    #             'region': region,
-    #     }
-    #     if userid:
-    #         mapping_kwargs['userid'] = userid
-    #     fsclient.associations.set_name(resource_name)
-    #     return fsclient.associations.create(**mapping_kwargs).id
-    
-    # def add_fs_access_cloud(self,azName, dc,suffix, is_api_vpn,fs_vpn_eip,fs_vpn_username, fs_vpn_password,fs_api_subnet_id,
-    #                         fs_api_vpn_ip, fs_tunnel_subnet_id, fs_tunnel_vpn_ip,**kwargs):
-    #     LOG.info("start add fusionSphere access cloud, "
-    #                 "azname=%s, dc=%s, is_vpn=%s,eip=%s,fs_vpn_username=%s,fs_vpn_password=%s, api_subnet_id=%s,\
-    #                  api_vpn_ip=%s, tunnel_subnet_id=%s, "
-    #                 "tunnel_vpn_ip=%s,the kwargs is %s"
-    #                 % (azName, dc, str(is_api_vpn),fs_vpn_eip,fs_vpn_username, fs_vpn_password,
-    #                    fs_api_subnet_id, fs_api_vpn_ip, fs_tunnel_subnet_id, fs_tunnel_vpn_ip, str(kwargs)))
-    #
-    #     cloud_id = "@".join([azName, dc, suffix])
-    #     cloud_region = ".".join([azName, dc])
-    #     # distribute cloud_domain && proxy_name for this cloud
-    #     proxy_info = proxy_manager.distribute_proxy()
-    #     time.sleep(180)
-    #     cascaded_ip = kwargs.get('cascaded_ip')
-    #     cascaded_user_name = kwargs.get('cascaded_user_name')
-    #     cascaded_user_password = kwargs.get('cascaded_user_password')
-    #     fs_gateway_ip = kwargs.get('fs_gateway_ip')
-    #     v2v_gateway_ip = kwargs.get('v2v_gateway_ip')
-    #     keystone_url = kwargs.get('keystone_url')
-    #     associate_user_name = kwargs.get('associate_user_name')
-    #     associate_user_password = kwargs.get('associate_user_password')
-    #     associate_user_description = kwargs.get('associate_user_description')
-    #     associate_admin_hproject_id = kwargs.get('associate_admin_hproject_id')
-    #     associate_admin_project_id = kwargs.get('associate_admin_project_id')
-    #     associate_service_hproject_id = kwargs.get('associate_service_hproject_id')
-    #     associate_service_project_id = kwargs.get('associate_service_project_id')
-    #
-    #     access = kwargs.get('access')
-    #
-    #     LOG.info("mapping user,project")
-    #     user_id =  self.create_user(fsclient, associate_user_name, associate_user_password, \
-    #                                 cloud_region, associate_user_description)
-    #
-    #     associate_admin_id = self.create_mapping(fsclient, 'project', associate_admin_hproject_id,
-    #                          associate_admin_project_id, cloud_region, user_id)
-    #     associate_service_id = self.create_mapping(fsclient, 'project', associate_service_hproject_id,
-    #                         associate_service_project_id, cloud_region, user_id)
-    #
-    #     LOG.info("update fsgateway config  add cascaded keystone_url")
-    #     self._update_fsgateway_config( host_ip=self.cascading_api_ip,
-    #             user=constant.Cascading.ROOT,
-    #             passwd=constant.Cascading.ROOT_PWD,
-    #             action ='add', region=cloud_region,keystone_url=keystone_url)
-    #
-    #
-    #     # vpn_conn_name = {"api_conn_name": cloud_id + '-api',
-    #     #                  "tunnel_conn_name": cloud_id + '-tunnel'}
-    #     #
-    #     #
-    #     # LOG.info("config local vpn thread")
-    #     # local_vpn_cf = VpnConfiger(
-    #     #             host_ip=self.local_vpn_ip,
-    #     #             user=constant.VpnConstant.VPN_ROOT,
-    #     #             password=constant.VpnConstant.VPN_ROOT_PWD)
-    #     # if is_api_vpn :
-    #     #     local_vpn_cf.register_add_conns(
-    #     #             tunnel_name=vpn_conn_name["api_conn_name"],
-    #     #             left_public_ip=self.local_vpn_public_gw,
-    #     #             left_subnet=self.local_api_subnet,
-    #     #             right_public_ip=fs_vpn_eip,
-    #     #             right_subnet=fs_api_subnet_id)
-    #     #
-    #     # local_vpn_cf.register_add_conns(
-    #     #         tunnel_name=vpn_conn_name["tunnel_conn_name"],
-    #     #         left_public_ip=self.local_vpn_public_gw,
-    #     #         left_subnet=self.local_tunnel_subnet,
-    #     #         right_public_ip=fs_vpn_eip,
-    #     #         right_subnet=fs_tunnel_subnet_id)
-    #     #
-    #     # self.local_vpn_thread = threading.Thread(
-    #     #         target=local_vpn_cf.do_config)
-    #     # self.local_vpn_thread.start()
-    #     #
-    #     #
-    #     # LOG.info("config fusionsphere cloud vpn thread")
-    #     # cloud_vpn_cf = VpnConfiger(
-    #     #         host_ip=fs_vpn_eip,
-    #     #         user=fs_vpn_username,
-    #     #         password=fs_vpn_password)
-    #     #
-    #     # if is_api_vpn :
-    #     #     cloud_vpn_cf.register_add_conns(
-    #     #             tunnel_name=vpn_conn_name["api_conn_name"],
-    #     #             left_public_ip=fs_vpn_eip,
-    #     #             left_subnet=fs_api_subnet_id,
-    #     #             right_public_ip=self.local_vpn_public_gw,
-    #     #             right_subnet=self.local_api_subnet)
-    #     #
-    #     # cloud_vpn_cf.register_add_conns(
-    #     #         tunnel_name=vpn_conn_name["tunnel_conn_name"],
-    #     #         left_public_ip=fs_vpn_eip,
-    #     #         left_subnet=fs_tunnel_subnet_id,
-    #     #         right_public_ip=self.local_vpn_public_gw,
-    #     #         right_subnet=self.local_tunnel_subnet)
-    #     #
-    #     # self.cloud_vpn_thread = threading.Thread(
-    #     #         target=cloud_vpn_cf.do_config)
-    #     # self.cloud_vpn_thread.start()
-    #     #
-    #     # if is_api_vpn :
-    #     #     LOG.info("add route to aws on cascading ...")
-    #     #     self._add_vpn_route(
-    #     #             host_ip=self.cascading_api_ip,
-    #     #             user=constant.Cascading.ROOT,
-    #     #             passwd=constant.Cascading.ROOT_PWD,
-    #     #             access_cloud_api_subnet=fs_api_subnet_id,
-    #     #             api_gw=self.local_vpn_api_ip,
-    #     #             access_cloud_tunnel_subnet=fs_tunnel_subnet_id,
-    #     #             tunnel_gw=self.local_vpn_tunnel_ip)
-    #     #
-    #     #     LOG.info("add route to cascaded  ...")
-    #     #     self._add_vpn_route(
-    #     #             host_ip=cascaded_ip,
-    #     #             user=cascaded_user_name,
-    #     #             passwd=cascaded_user_password,
-    #     #             access_cloud_api_subnet=self.local_api_subnet,
-    #     #             api_gw=fs_api_vpn_ip,
-    #     #             access_cloud_tunnel_subnet=self.local_tunnel_subnet,
-    #     #             tunnel_gw=fs_tunnel_vpn_ip)
-    #     # else:
-    #     #     LOG.info("add route to aws on cascading ...")
-    #     #     self._add_vpn_tunnel_route(
-    #     #             host_ip=self.cascading_api_ip,
-    #     #             user=constant.Cascading.ROOT,
-    #     #             passwd=constant.Cascading.ROOT_PWD,
-    #     #             access_cloud_tunnel_subnet=fs_tunnel_subnet_id,
-    #     #             tunnel_gw=self.local_vpn_tunnel_ip)
-    #     #
-    #     #     LOG.info("add route to cascaded  ...")
-    #     #     self._add_vpn_tunnel_route(
-    #     #             host_ip=cascaded_ip,
-    #     #             user=cascaded_user_name,
-    #     #             passwd=cascaded_user_password,
-    #     #             access_cloud_tunnel_subnet=self.local_tunnel_subnet,
-    #     #             tunnel_gw=fs_tunnel_vpn_ip)
-    #
-    #     # config proxy on cascading host
-    #     if proxy_info is None:
-    #         LOG.info("wait proxy ...")
-    #         time.sleep(240)
-    #         proxy_info = self._get_proxy_retry()
-    #
-    #     LOG.info("add dhcp to proxy ...")
-    #     proxy_id = proxy_info["id"]
-    #     proxy_num = proxy_info["proxy_num"]
-    #     LOG.debug("proxy_id = %s, proxy_num = %s"
-    #                  % (proxy_id, proxy_num))
-    #
-    #     LOG.info("config proxy ...")
-    #     self._config_proxy(self.cascading_api_ip, proxy_info)
-    #
-    #     cloud = fscloud.FsCloud(
-    #             cloud_id=cloud_id,
-    #             azName=azName,
-    #             dc=dc,
-    #             cloud_proxy=proxy_info,
-    #             keystone_url = keystone_url,
-    #             associate_user_id = user_id,
-    #             associate_admin_id =associate_admin_id,
-    #             associate_service_id = associate_service_id,
-    #             access =access,
-    #             is_api_vpn = is_api_vpn,
-    #             fs_vpn_eip = fs_vpn_eip,
-    #             fs_vpn_username = fs_vpn_username,
-    #             fs_vpn_password = fs_vpn_password,
-    #             fs_api_subnet_id = fs_api_subnet_id,
-    #             fs_api_vpn_ip = fs_api_vpn_ip,
-    #             fs_tunnel_subnet_id = fs_tunnel_subnet_id,
-    #             fs_tunnel_vpn_ip = fs_tunnel_vpn_ip,
-    #             cascaded_ip = cascaded_ip,
-    #             cascaded_user_name = cascaded_user_name,
-    #             cascaded_user_password = cascaded_user_password
-    #             )
-    #     FsCloudDataHandler().add_fs_cloud(cloud)
-    #
-    #     # LOG.info("register fs gateway ...")
-    #     # fs_gateway_register.register_availability_zone(azName, dc, suffix, cascaded_ip,
-    #     #                        proxy_id, proxy_num, fs_gateway_ip, v2v_gateway_ip)
-    #
-    #     LOG.info("enable openstack service")
-    #     for i in range(3):
-    #         try:
-    #             commonutils.execute_cmd_without_stdout(
-    #                 host=self.cascading_api_ip,
-    #                 user=constant.Cascading.ROOT,
-    #                 password=constant.Cascading.ROOT_PWD,
-    #                 cmd='cd %(dir)s; sh %(script)s %(cascaded_domain)s'
-    #                     % {"dir": constant.Cascading.REMOTE_SCRIPTS_DIR,
-    #                        "script":
-    #                            constant.Cascading.ENABLE_OPENSTACK_SERVICE,
-    #                        "cascaded_domain": cloud_region})
-    #             break
-    #         except exception.SSHCommandFailure as e:
-    #             LOG.error(
-    #                 "enable openstack service error, cascaded: %s, error: %s"
-    #                 % (cloud_region, e.format_message()))
-    #             time.sleep(1)
-    #
-    #     LOG.info("enable openstack service success, cascading: %s"
-    #                 % self.cascading_api_ip)
-    #
-    #     LOG.info("update cinde_proxy_code")
-    #     self._update_cinder_proxy_code(proxy_ip=cloud.cloud_proxy["manageip"],
-    #                                user=constant.Proxy.USER,
-    #                                passwd=constant.Proxy.PWD,
-    #                                proxy_num=cloud.cloud_proxy["proxy_num"])
-    #
-    #     LOG.info("update cascaded_code")
-    #     self._update_cascaded_code(cascaded_ip, cascaded_user_name, cascaded_user_password)
-    #
-    #     if access:
-    #         LOG.info("enable network cross this cloud and othercloud")
-    #         self._enable_network_cross_fs_and_othercloud(cloud)
-        
     
     @staticmethod
     def _update_cascaded_code(cascaded_ip, cascaded_user_name, cascaded_user_passwd):  

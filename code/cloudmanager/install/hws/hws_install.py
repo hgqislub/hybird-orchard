@@ -72,13 +72,13 @@ class HwsCascadedInstaller(object):
             LOG.error(e)
             raise ReadEnvironmentInfoFailure(error = error)
         except KeyError as e:
-            error = "read key = %s error in file = %s" % (e.message, _environment_conf)
+            error = "read key = %s error in file = %s" % (e.message, constant.Cascading.ENV_FILE)
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
     def _read_default_conf(self):
         try:
-            self.default_params = conf_util.read_conf(constant.Cascading.HWS_CONF_FILE)
+            self.default_params = conf_util.read_conf(constant.AwsConstant.CONF_FILE)
             self.default_protocol = self.default_params["project_info"]["protocol"]
             self.default_port = self.default_params["project_info"]["port"]
             self.default_host = self.default_params["project_info"]["host"]
@@ -95,11 +95,11 @@ class HwsCascadedInstaller(object):
             self.default_debug_cidr = network["debug_cidr"]
 
         except IOError as e:
-            error = "read file = %s error" % constant.Cascading.ENV_FILE
+            error = "read file = %s error" % constant.HwsConstant.CONF_FILE
             LOG.error(e)
             raise ReadEnvironmentInfoFailure(error = error)
         except KeyError as e:
-            error = "read key = %s error in file = %s" % (e.message, _environment_conf)
+            error = "read key = %s error in file = %s" % (e.message, constant.HwsConstant.CONF_FILE)
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
@@ -307,10 +307,6 @@ class HwsCascadedInstaller(object):
         self.vpn_tunnel_bearing_ip = vpn_info["tunnel_bearing_ip"]
 
     def cloud_uninstall(self):
-        self._cloud_uninstall()
-        pass
-
-    def _cloud_uninstall(self):
         self.uninstall_cascaded()
         self.uninstall_vpn()
         if self.delete_cascaded_job_id:

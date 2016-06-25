@@ -79,6 +79,7 @@ class Cloud(object):
     def cloud_preuninstall(self):
         self.installer.cloud_preuninstall()
         pass
+
     def cloud_uninstall(self):
         install_info = self.installer.get_cloud_info()
         self.installer.cloud_uninstall()   

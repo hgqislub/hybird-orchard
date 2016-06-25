@@ -976,7 +976,8 @@ class AwsCloud(resource.Resource):
         API_SUBNET_ID, API_SUBNET_CIDR,
         DATA_SUBNET_ID, DATA_SUBNET_CIDR,
         RESERVE_CIDR,
-        API_VPN_PRIVATE_IP, DATA_VPN_PRIVATE_IP
+        API_VPN_PRIVATE_IP, DATA_VPN_PRIVATE_IP,
+        PROJECT_INFO,CASCADED, VPN, NETWORK, PROXY
     ) = (
         'CloudType', 'RegionName', 'AvailabilityZone', 'AZName', 'AccessKey',
         'SecretKey',
@@ -986,7 +987,9 @@ class AwsCloud(resource.Resource):
         'APISubnetID', 'APISubnetCIDR',
         'DATASubnetID', 'DATASubnetCIDR',
         'ReserveCIDR',
-        'APIVPNPrivateIP', 'DataVPNPrivateIP'
+        'APIVPNPrivateIP', 'DataVPNPrivateIP',
+        'ProjectInfo', 'Cascaded', 'Vpn', 'Network', 'Proxy'
+
     )
 
     properties_schema = {
@@ -1057,6 +1060,26 @@ class AwsCloud(resource.Resource):
         DATA_VPN_PRIVATE_IP: properties.Schema(
             properties.Schema.STRING,
             _('Private Ip of the data vpn.')
+        ),
+        PROJECT_INFO: properties.Schema(
+            properties.Schema.MAP,
+            _('project info of hws account.')
+        ),
+        CASCADED: properties.Schema(
+            properties.Schema.MAP,
+            _('cascaded info, like image, flavor...')
+        ),
+        VPN: properties.Schema(
+            properties.Schema.MAP,
+            _('vpn info, like image, flavor...')
+        ),
+        PROXY: properties.Schema(
+            properties.Schema.MAP,
+            _('proxy info, like image, flavor...')
+        ),
+        NETWORK: properties.Schema(
+            properties.Schema.MAP,
+            _('network info. like vpc, subnet')
         )
     }
 
@@ -1071,6 +1094,13 @@ class AwsCloud(resource.Resource):
         cloud_params["availabilityzone"] = self.properties.get(self.AVAILABILITY_ZONE)
         cloud_params["azname"] = self.properties.get(self.AZNAME)
         cloud_params["access"] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
+
+        cloud_params['project_info'] = self.properties.get(self.PROJECT_INFO)
+        cloud_params['proxy_info'] = self.properties.get(self.PROXY)
+        cloud_params['cascaded_info'] = self.properties.get(self.CASCADED)
+        cloud_params['vpn_info'] = self.properties.get(self.VPN)
+        cloud_params['network'] = self.properties.get(self.NETWORK)
+        cloud_params['extra'] = self.properties.get(self.EXTRA)
 
         cloud_params["driver_type"] = self.properties.get(self.DRIVER_TYPE)
 
@@ -1392,7 +1422,6 @@ class HwsCloud(resource.Resource):
         super(HwsCloud, self).__init__(name, json_snippet, stack)
         self.cloud_params = dict()
         self.cloud_params['cloud_type'] = self.properties.get(self.CLOUD_TYPE)
-        self.cloud_params['data_center'] = self.properties.get(self.DATA_CENTER)
         self.cloud_params['azname'] = self.properties.get(self.AZNAME)
         self.cloud_params['project_info'] = self.properties.get(self.PROJECT_INFO)
         self.cloud_params['proxy_info'] = self.properties.get(self.PROXY)

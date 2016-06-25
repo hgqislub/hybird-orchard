@@ -6,6 +6,8 @@ _aws_access_cloud_data_file = os.path.join("/home/hybrid_cloud/data",
                                            "aws_access_cloud_install.data")
 _aws_access_cloud_data_file_lock = threading.Lock()
 
+from heat.engine.resources.cloudmanager.util.conf_util import *
+
 
 def _read_aws_access_cloud_info():
     aws_hybrid_cloud = {}
@@ -127,9 +129,7 @@ def write_vpc(cloud_id, vpc_id,
                 "api_subnet_cidr": api_subnet_id_cidr,
                 "api_subnet_id": api_subnet_id,
                 "tunnel_subnet_cidr": tunnel_subnet_cidr,
-                "tunnel_subnet_id": tunnel_subnet_id,
-                "ceph_subnet_cidr": ceph_subnet_cidr,
-                "ceph_subnet_id": ceph_subnet_id,
+                "tunnel_subnet_id": tunnel_subnet_id
                 "gateway_id": gateway_id,
                 "rtb_id": rtb_id}
     _write_unit_info(cloud_id, "vpc", vpn_info)
@@ -171,35 +171,6 @@ def write_vpn(cloud_id,
                 "tunnel_interface_id": vpn_tunnel_interface_id}
 
     _write_unit_info(cloud_id, "vpn", vpn_info)
-
-
-def write_v2v_gateway(cloud_id, v2v_vm_id, v2v_ip):
-    v2v_info = {"vm_id": v2v_vm_id,
-                "ip": v2v_ip}
-    _write_unit_info(cloud_id, "v2v_gateway", v2v_info)
-
-
-def write_hynode(cloud_id, hynode_image_id):
-    hynode_info = {"image_id": hynode_image_id}
-    _write_unit_info(cloud_id, "hynode", hynode_info)
-
-
-def write_ceph_cluster(cloud_id,
-                       ceph_deploy_vm_id, ceph_deploy_ip,
-                       ceph_node1_vm_id, ceph_node1_ip,
-                       ceph_node2_vm_id, ceph_node2_ip,
-                       ceph_node3_vm_id, ceph_node3_ip):
-    ceph_cluster_info = {"deploy_vm_id": ceph_deploy_vm_id,
-                         "deploy_ip": ceph_deploy_ip,
-                         "node1_vm_id": ceph_node1_vm_id,
-                         "node1_ip": ceph_node1_ip,
-                         "node2_vm_id": ceph_node2_vm_id,
-                         "node2_ip": ceph_node2_ip,
-                         "node3_vm_id": ceph_node3_vm_id,
-                         "node3_ip": ceph_node3_ip}
-
-    _write_unit_info(cloud_id,
-                     "ceph_cluster", ceph_cluster_info)
 
 
 def write_ext_net_eip(cloud_id, ext_net_eips):

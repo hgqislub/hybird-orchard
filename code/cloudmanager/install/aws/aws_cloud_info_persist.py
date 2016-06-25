@@ -5,7 +5,7 @@ import threading
 
 from awscloud import AwsCloud
 from heat.engine.resources.cloudmanager.util.commonutils import *
-
+from heat.engine.resources.cloudmanager.util.conf_util import CloudInfoHandler
 
 def aws_cloud_2_dict(obj):
     result = {}
@@ -29,65 +29,85 @@ def dict_2_aws_cloud(aws_dict):
                          with_ceph=aws_dict["with_ceph"])
     return aws_cloud
 
+class AwsCloudInfoPersist(object):
+    def __init__(self, _access_cloud_install_info_file, cloud_id):
+        self.info_handler = CloudInfoHandler(_access_cloud_install_info_file, cloud_id)
 
-aws_cloud_data_file = os.path.join("/home/hybrid_cloud/data",
-                                   "aws_access_cloud.data")
-aws_cloud_data_file_lock = threading.Lock()
+    def write_vpc_info(self, vpc_id,
+              debug_subnet_cidr, debug_subnet_id,
+              base_subnet_cidr, base_subnet_id,
+              api_subnet_id_cidr, api_subnet_id,
+              tunnel_subnet_cidr, tunnel_subnet_id,
+              gateway_id, rtb_id):
+        vpc_info = {"vpc_id": vpc_id,
+                "debug_subnet_cidr": debug_subnet_cidr,
+                "debug_subnet_id": debug_subnet_id,
+                "base_subnet_cidr": base_subnet_cidr,
+                "base_subnet_id": base_subnet_id,
+                "api_subnet_cidr": api_subnet_id_cidr,
+                "api_subnet_id": api_subnet_id,
+                "tunnel_subnet_cidr": tunnel_subnet_cidr,
+                "tunnel_subnet_id": tunnel_subnet_id,
+                "gateway_id": gateway_id,
+                "rtb_id": rtb_id}
+        self.info_handler.write_unit_info("vpc", vpc_info)
+
+    def write_cascaded_info(self,
+                   cascaded_vm_id,
+                   cascaded_eip_public_ip, cascaded_eip_allocation_id,
+                   cascaded_debug_ip, cascaded_debug_interface_id,
+                   cascaded_base_ip, cascaded_base_interface_id,
+                   cascaded_api_ip, cascaded_api_interface_id,
+                   cascaded_tunnel_ip, cascaded_tunnel_interface_id):
+        cascaded_info = {"vm_id": cascaded_vm_id,
+                     "eip_public_ip": cascaded_eip_public_ip,
+                     "eip_allocation_id": cascaded_eip_allocation_id,
+                     "debug_ip": cascaded_debug_ip,
+                     "debug_interface_id": cascaded_debug_interface_id,
+                     "base_ip": cascaded_base_ip,
+                     "base_interface_id": cascaded_base_interface_id,
+                     "api_ip": cascaded_api_ip,
+                     "api_interface_id": cascaded_api_interface_id,
+                     "tunnel_ip": cascaded_tunnel_ip,
+                     "tunnel_interface_id": cascaded_tunnel_interface_id}
+        self.info_handler.write_unit_info("cascaded", cascaded_info)
 
 
-class AwsCloudDataHandler(object):
-    def __init__(self):
-        pass
+    def write_vpn_info(self,
+              vpn_vm_id,
+              vpn_eip_public_ip, vpn_eip_allocation_id,
+              vpn_api_ip, vpn_tunnel_ip,
+              vpn_api_interface_id=None, vpn_tunnel_interface_id=None):
+        vpn_info = {"vm_id": vpn_vm_id,
+                "eip_public_ip": vpn_eip_public_ip,
+                "eip_allocation_id": vpn_eip_allocation_id,
+                "api_ip": vpn_api_ip,
+                "tunnel_ip": vpn_tunnel_ip,
+                "api_interface_id": vpn_api_interface_id,
+                "tunnel_interface_id": vpn_tunnel_interface_id}
 
-    def list_aws_clouds(self):
-        cloud_dicts = self.__read_aws_cloud_info__()
-        return cloud_dicts.keys()
+        self.info_handler.write_unit_info("vpn", vpn_info)
 
-    def get_aws_cloud(self, cloud_id):
-        cloud_dicts = self.__read_aws_cloud_info__()
-        if cloud_id in cloud_dicts.keys():
-            return dict_2_aws_cloud(cloud_dicts[cloud_id])
-        else:
-            return None
+    def write_proxy(self, proxy_info):
+        self.info_handler.write_unit_info("proxy_info", proxy_info)
 
-    def delete_aws_cloud(self, cloud_id):
-        aws_cloud_data_file_lock.acquire()
-        try:
-            cloud_dicts = self.__read_aws_cloud_info__()
-            cloud_dicts.pop(cloud_id)
-            self.__write_aws_cloud_info__(cloud_dicts)
-        except Exception as e:
-            logger.error("delete aws cloud data file error, "
-                         "cloud_id: %s, error: %s"
-                         % (cloud_id, e.message))
-        finally:
-            aws_cloud_data_file_lock.release()
+    def read_proxy(self):
+        return self.info_handler.get_unit_info("proxy_info")
 
-    def add_aws_cloud(self, aws_cloud):
-        aws_cloud_data_file_lock.acquire()
-        try:
-            cloud_dicts = self.__read_aws_cloud_info__()
-            dict_temp = aws_cloud_2_dict(aws_cloud)
-            cloud_dicts[aws_cloud.cloud_id] = dict_temp
-            self.__write_aws_cloud_info__(cloud_dicts)
-        except Exception as e:
-            logger.error("add aws cloud data file error, "
-                         "aws_cloud: %s, error: %s"
-                         % (aws_cloud, e.message))
-        finally:
-            aws_cloud_data_file_lock.release()
+    def write_cloud_info(self, data):
+        self.info_handler.write_cloud_info(data)
 
-    @staticmethod
-    def __read_aws_cloud_info__():
-        if not os.path.exists(aws_cloud_data_file):
-            logger.error("read %s : No such file." % aws_cloud_data_file)
-            cloud_dicts = {}
-        else:
-            with open(aws_cloud_data_file, 'r+') as fd:
-                cloud_dicts = json.loads(fd.read())
-        return cloud_dicts
+    def read_cloud_info(self):
+        return self.info_handler.read_cloud_info()
 
-    @staticmethod
-    def __write_aws_cloud_info__(cloud_dicts):
-        with open(aws_cloud_data_file, 'w+') as fd:
-            fd.write(json.dumps(cloud_dicts, indent=4))
+    def delete_cloud_info(self):
+        self.info_handler.delete_cloud_info()
+
+    def list_all_cloud_id(self):
+        all_cloud = self.info_handler.get_all_unit_info()
+        return all_cloud.keys()
+
+    def get_cloud_info_with_id(self, cloud_id):
+        all_cloud = self.info_handler.get_all_unit_info()
+        if cloud_id in all_cloud.keys():
+            return all_cloud[cloud_id]

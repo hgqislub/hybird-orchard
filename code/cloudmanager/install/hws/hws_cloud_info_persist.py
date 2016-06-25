@@ -1,4 +1,4 @@
-from heat.engine.resources.cloudmanager.util.conf_util import *
+from heat.engine.resources.cloudmanager.util.conf_util import CloudInfoHandler
 
 
 class HwsCloudInfoPersist:

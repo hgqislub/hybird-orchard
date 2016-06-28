@@ -8,7 +8,6 @@ import heat.engine.resources.cloudmanager.util.proxy_manager as proxy_manager
 import heat.engine.resources.cloudmanager.util.constant as constant
 from region_mapping import *
 import aws_util
-import aws_access_cloud_data_handler as data_handler
 from aws_cloud_info_persist import *
 
 import pdb

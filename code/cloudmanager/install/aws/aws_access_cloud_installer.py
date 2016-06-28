@@ -22,23 +22,6 @@ def _read_install_conf():
         tmp = fd.read()
         return json.loads(tmp)
 
-
-def _write_install_conf():
-    install_conf = {"cascaded_image": "OpenStack-B111T-v0.994",
-                    "cascaded_vm_type": "c3.xlarge",
-                    "vpn_image": "hybrid-cloud-vpn-cascaded_v0.1",
-                    "vpn_vm_type": "t2.micro",
-                    "hynode_image": "hypernode_v3_019",
-                    "v2v_image": "V2V_Gateway",
-                    "v2v_vm_type": "t2.micro",
-                    "ceph_image": "ceph_template_10.22",
-                    "ceph_vm_type": "t2.micro"}
-
-    with open(_install_conf, 'w+') as fd:
-        fd.write(json.dumps(install_conf, indent=4))
-        return install_conf
-
-
 class AWSCascadedInstaller(object):
     def __init__(self, cloud_id, access_key=None, secret_key=None,
                  region=None, az=None):

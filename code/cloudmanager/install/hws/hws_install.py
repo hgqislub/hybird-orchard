@@ -35,12 +35,6 @@ class HwsCascadedInstaller(object):
         self._read_default_conf()
         self.cloud_id = "@".join(["HWS", self.cloud_params['azname']])
 
-        self.cascaded_image = self.default_cascaded_image
-        self.cascaded_flavor = self.default_cascaded_flavor
-        self.vpn_image = self.default_vpn_image
-        self.vpn_flavor = self.default_vpn_flavor
-        self.availability_zone = self.cloud_params["project_info"]["availability_zone"]
-
         project_info = self.cloud_params["project_info"]
         ak = project_info["access_key"]
         sk = project_info["secret_key"]
@@ -50,6 +44,12 @@ class HwsCascadedInstaller(object):
         host = self.default_host
         protocol = self.default_protocol
         self.installer = HwsInstaller(ak, sk, region, protocol, host, port, project_id)
+
+        self.cascaded_image_id = self.installer.get_image_id(name=self.default_cascaded_image_name)
+        self.cascaded_flavor = self.default_cascaded_flavor
+        self.vpn_image_id = self.installer.get_image_id(name=self.default_vpn_image_name)
+        self.vpn_flavor = self.default_vpn_flavor
+        self.availability_zone = self.cloud_params["project_info"]["availability_zone"]
 
         self.install_data_handler = \
             HwsCloudInfoPersist(constant.HwsConstant.INSTALL_INFO_FILE, self.cloud_id)
@@ -86,9 +86,9 @@ class HwsCascadedInstaller(object):
             self.default_port = self.default_params["project_info"]["port"]
             self.default_host = self.default_params["project_info"]["host"]
             image_info = self.default_params["image"]
-            self.default_cascaded_image = image_info["cascaded_image"]
+            self.default_cascaded_image_name = image_info["cascaded_image"]
             self.default_cascaded_flavor = image_info["cascaded_flavor"]
-            self.default_vpn_image = image_info["vpn_image"]
+            self.default_vpn_image_name = image_info["vpn_image"]
             self.default_vpn_flavor = image_info["vpn_flavor"]
             network = self.default_params["network"]
             self.default_vpc_cidr = network["vpc_cidr"]
@@ -334,7 +334,7 @@ class HwsCascadedInstaller(object):
         server_name = self.cloud_params["azname"]+"_cascaded"
         try:
             if self.cascaded_server_id is None:
-                self.cascaded_server_job_id = self.installer.create_vm(self.cascaded_image,
+                self.cascaded_server_job_id = self.installer.create_vm(self.cascaded_image_id,
                                       self.cascaded_flavor,
                                       server_name, self.vpc_id,
                                       nics,ROOT_VOLUME_TYPE,
@@ -459,7 +459,7 @@ class HwsCascadedInstaller(object):
         server_name = self.cloud_params["azname"]+"_vpn"
         if self.vpn_server_id is None:
             self.vpn_server_job_id = self.installer.create_vm(
-                self.vpn_image,
+                self.vpn_image_id,
                 self.vpn_flavor, server_name,
                 self.vpc_id, nics,
                 ROOT_VOLUME_TYPE,

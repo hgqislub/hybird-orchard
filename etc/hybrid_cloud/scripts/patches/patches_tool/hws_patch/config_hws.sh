@@ -47,6 +47,7 @@ config_nova(){
     sed -i "s#%rabbit_host_ip%#${rabbit_host_ip}#g" ${NOVA_CONFIG_FILE}
     sed -i "s#%security_group_vpc%#${security_group_vpc}#g" ${NOVA_CONFIG_FILE}
 
+    source /root/adminrc
     cps host-template-instance-operate --action stop --service nova nova-compute
     cps host-template-instance-operate --action start --service nova nova-compute
 }

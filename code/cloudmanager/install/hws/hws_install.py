@@ -102,7 +102,7 @@ class HwsCascadedInstaller(object):
             LOG.error(e)
             raise ReadEnvironmentInfoFailure(error = error)
         except KeyError as e:
-            error = "read key = %s error in file = %s" % (e.message, _environment_conf)
+            error = "read key = %s error in file = %s" % (e.message, constant.Cascading.HWS_CONF_FILE)
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
@@ -287,6 +287,8 @@ class HwsCascadedInstaller(object):
 
     def cloud_postuninstall(self):
         #pdb.set_trace()
+        subnet_manager = SubnetManager()
+        subnet_manager.release_subnet_pair(self.default_tunnel_bearing_cidr, constant.HwsConstant.INSTALL_INFO_FILE)
         self.install_data_handler.delete_cloud_info()
         self.cloud_info_handler.delete_cloud_info()
 

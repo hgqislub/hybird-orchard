@@ -11,7 +11,7 @@ import install.vcloud.vcloud_cloudinfo as vcloudcloudinfo
 import install.vcloud.vcloud_config as vcloudconfiger
 
 
-#from subnet_manager import SubnetManager
+
 import proxy_manager
 
 LOG = logging.getLogger(__name__)
@@ -165,9 +165,9 @@ class SubCloud(object):
 
     def register_cloud(self):
         self.configer.config_vpn()
+        self.configer.config_route()
         self.configer.config_cascading()
         self.configer.config_cascaded()
-        self.configer.config_route()
         self.configer.config_proxy()
         self.configer.config_patch()
         self.configer.config_storge()

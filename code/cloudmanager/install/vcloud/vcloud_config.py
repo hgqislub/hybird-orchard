@@ -331,7 +331,6 @@ class VcloudCloudConfig:
                     host=host_ip, user=user, password=passwd,
                     cmd='cd %(dis)s; sh %(script)s '
                         '%(proxy_num)s %(proxy_host_name)s %(cascaded_domain)s '
-                        '%(local_tunnel_subnet)s %(cloud_vpn_tunnel_ip)s '
                         '%(cascading_domain)s'
                         % {"dis": constant.PatchesConstant.REMOTE_SCRIPTS_DIR,
                            "script":
@@ -339,8 +338,6 @@ class VcloudCloudConfig:
                            "proxy_num": proxy_info["proxy_num"],
                            "proxy_host_name": proxy_info["id"],
                            "cascaded_domain": cascaded_domain,
-                           "local_tunnel_subnet": self.installer.local_tunnel_subnet,
-                           "cloud_vpn_tunnel_ip": install_info["vpn"]["vpn_tunnel_ip"],
                            "cascading_domain": self.installer.cascading_domain})
                 return True
             except Exception as e:

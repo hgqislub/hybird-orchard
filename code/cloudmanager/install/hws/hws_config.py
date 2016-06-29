@@ -452,8 +452,6 @@ class HwsConfig(object):
                     host=host_ip, user=user, password=passwd,
                      cmd='cd %(dis)s; sh %(script)s '
                         '%(proxy_num)s %(proxy_host_name)s %(cascaded_domain)s '
-                        '%(local_api_subnet)s %(cloud_vpn_api_ip)s '
-                        '%(local_tunnel_subnet)s %(cloud_vpn_tunnel_ip)s '
                         '%(cascading_domain)s'
                         % {"dis": constant.PatchesConstant.REMOTE_SCRIPTS_DIR,
                            "script":
@@ -461,11 +459,7 @@ class HwsConfig(object):
                            "proxy_num": proxy_info["proxy_num"],
                            "proxy_host_name": proxy_info["id"],
                            "cascaded_domain": cascaded_domain,
-                           "local_api_subnet": install_info['cascading_subnets_info']['external_api'],
-                           "cloud_vpn_api_ip": install_info["cascaded_vpn_info"]["external_api_ip"],
-                           "local_tunnel_subnet": install_info['cascading_subnets_info']['tunnel_bearing'],
-                           "cloud_vpn_tunnel_ip": install_info["cascaded_vpn_info"]["tunnel_bearing_ip"],
-                           "cascading_domain": install_info["cascading_info"]["domain"]})
+                            "cascading_domain": install_info["cascading_info"]["domain"]})
                 return True
             except Exception as e:
                 LOG.error("config patch tool error, error: %s"
@@ -524,6 +518,8 @@ class HwsConfig(object):
                            "rabbit_host_ip":self.install_info["cascaded_info"]["internal_base_ip"],
                            "security_group_vpc":self.install_info["cascaded_subnets_info"]["security_group_id"]
                             })
+
+                self._restart_nova_computer(host_ip, user, passwd)
                 return True
             except Exception as e:
                 LOG.error("config hws error, error: %s"
@@ -531,6 +527,17 @@ class HwsConfig(object):
                 continue
 
         return True
+    @staticmethod
+    def _restart_nova_computer(host_ip, user, passwd):
+        execute_cmd_without_stdout(
+            host=host_ip, user=user, password=passwd,
+            cmd='source /root/adminrc;'
+                'cps host-template-instance-operate --action stop --service nova nova-compute')
+        time.sleep(1)
+        execute_cmd_without_stdout(
+            host=host_ip, user=user, password=passwd,
+            cmd='source /root/adminrc;'
+                'cps host-template-instance-operate --action start --service nova nova-compute')
 
     @staticmethod
     def _deploy_patches(host_ip, user, passwd):

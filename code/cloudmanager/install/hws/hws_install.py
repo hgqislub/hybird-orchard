@@ -75,7 +75,7 @@ class HwsCascadedInstaller(object):
             LOG.error(e)
             raise ReadEnvironmentInfoFailure(error = error)
         except KeyError as e:
-            error = "read key = %s error in file = %s" % (e.message, _environment_conf)
+            error = "read key = %s error in file = %s" % (e.message, constant.Cascading.ENV_FILE    )
             LOG.error(error)
             raise ReadEnvironmentInfoFailure(error = error)
 
@@ -98,7 +98,7 @@ class HwsCascadedInstaller(object):
             self.default_debug_cidr = network["debug_cidr"]
 
         except IOError as e:
-            error = "read file = %s error" % constant.Cascading.ENV_FILE
+            error = "read file = %s error" % constant.Cascading.HWS_CONF_FILE
             LOG.error(e)
             raise ReadEnvironmentInfoFailure(error = error)
         except KeyError as e:

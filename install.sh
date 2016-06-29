@@ -71,6 +71,6 @@ elif [ "$1" == "update" ]; then
 elif [ "$1" == "rollback" ]; then
     rollback $2
 else
-    echo "Usage: sh $0 install {install|backup|update|rollback 20160608-15:28:07}"
+    echo "Usage: sh $0 install {install|backup|update|rollback}"
 fi
 

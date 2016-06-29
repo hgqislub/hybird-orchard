@@ -9,8 +9,10 @@ class IMSService(HWSService):
     def __init__(self, ak, sk, region, protocol, host, port):
         super(IMSService, self).__init__(ak, sk, 'IMS', region, protocol, host, port)
 
-    def list(self, project_id):
-        uri = '/v2/images'
+    def list(self, name=None):
+        uri = '/v2/cloudimages'
+        if name:
+            uri = uri + "?name=" + name
         return self.get(uri)
 
     def create_image(self, name, description, instance_id=None, backup_id=None):

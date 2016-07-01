@@ -33,7 +33,7 @@ class HwsConfig(object):
         cloud_id = self.install_info["cloud_id"]
         self.cloud_info_handler = \
             HwsCloudInfoPersist(constant.HwsConstant.CLOUD_INFO_FILE, cloud_id)
-
+        self._modify_cascaded_external_api()
 
     def _config_cascading_vpn(self):
         LOG.info("config local vpn")
@@ -230,7 +230,7 @@ class HwsConfig(object):
                     password=constant.HwsConstant.ROOT_PWD,
                     retry_time=100, interval=3)    #test api net
 
-    def _config_cascaded(self):
+    def _modify_cascaded_external_api(self):
         #ssh to vpn, then ssh to cascaded through vpn tunnel_bearing_ip
         modify_cascaded_api_domain_cmd = 'cd %(dir)s; ' \
                     'source /root/adminrc; ' \
@@ -344,8 +344,18 @@ class HwsConfig(object):
 
     def config_cascaded(self):
         LOG.info("config cascaded")
-        self._config_cascaded()
 
+        cascaded_cf = CascadedConfiger(
+                public_ip_api = self.install_info["cascaded_info"]["public_ip"],
+                api_ip = self.install_info["cascaded_info"]["external_api_ip"],
+                domain = self.install_info["cascaded_info"]['domain'],
+                user = constant.HwsConstant.ROOT,
+                password = constant.HwsConstant.ROOT_PWD,
+                cascading_domain = self.install_info['cascading_info']['domain'],
+                cascading_api_ip = self.install_info["cascading_info"]["external_api_ip"]
+        )
+
+        cascaded_cf.do_config()
 
     def config_proxy(self):
         # config proxy on cascading host

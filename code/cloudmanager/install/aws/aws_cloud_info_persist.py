@@ -72,6 +72,19 @@ class AwsCloudInfoPersist(object):
                      "tunnel_interface_id": cascaded_tunnel_interface_id}
         self.info_handler.write_unit_info("cascaded", cascaded_info)
 
+    def write_subnets_cidr(self, vpc_cidr,
+                           external_api_cidr,
+                           tunnel_bearing_cidr,
+                           internal_base_cidr,
+                           debug_cidr):
+        subnets_cidr_info = {
+            "vpc_cidr": vpc_cidr,
+            "external_api_cidr": external_api_cidr,
+            "tunnel_bearing_cidr": tunnel_bearing_cidr,
+            "internal_base_cidr": internal_base_cidr,
+            "debug_cidr": debug_cidr
+        }
+        self.info_handler.write_unit_info("subnets_cidr", subnets_cidr_info)
 
     def write_vpn_info(self,
               vpn_vm_id,

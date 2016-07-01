@@ -123,8 +123,8 @@ class AwsCascadedInstaller(object):
         self.cascaded_api_interface_id = None
         self.cascaded_tunnel_ip = None
         self.cascaded_tunnel_interface_id = None
-        self.cascaded_eip_public_ip = None
-        self.cascaded_eip_allocation_id = None
+        self.cascaded_public_ip = None
+        self.cascaded_public_ip_id = None
 
         self.vpn_vm = None
         self.vpn_vm_id = None
@@ -177,8 +177,8 @@ class AwsCascadedInstaller(object):
             self.cascaded_api_interface_id = cascaded_info["api_interface_id"]
             self.cascaded_tunnel_ip = cascaded_info["tunnel_ip"]
             self.cascaded_tunnel_interface_id = cascaded_info["tunnel_interface_id"]
-            self.cascaded_eip_public_ip = cascaded_info["eip_public_ip"]
-            self.cascaded_eip_allocation_id = cascaded_info["eip_allocation_id"]
+            self.cascaded_public_ip = cascaded_info["eip_public_ip"]
+            self.cascaded_public_ip_id = cascaded_info["eip_allocation_id"]
 
         if "vpn" in cloud_info.keys():
             vpn_info = cloud_info["vpn"]
@@ -351,12 +351,12 @@ class AwsCascadedInstaller(object):
         self.installer.associate_elastic_address(
                 eip=cascaded_eip,
                 network_interface_id=self.cascaded_api_interface_id)
-        self.cascaded_eip_public_ip = cascaded_eip.public_ip
-        self.cascaded_eip_allocation_id = cascaded_eip.allocation_id
+        self.cascaded_public_ip = cascaded_eip.public_ip
+        self.cascaded_public_ip_id = cascaded_eip.allocation_id
 
         self.install_data_handler.write_cascaded_info(self.cascaded_vm_id,
-                                    self.cascaded_eip_public_ip,
-                                    self.cascaded_eip_allocation_id,
+                                    self.cascaded_public_ip,
+                                    self.cascaded_public_ip_id,
                                     self.cascaded_debug_ip,
                                     self.cascaded_debug_interface_id,
                                     self.cascaded_base_ip,
@@ -427,13 +427,13 @@ class AwsCascadedInstaller(object):
         self.release_ext_net_eip()
 
     def uninstall_cascaded(self):
-        if self.cascaded_eip_public_ip is not None:
+        if self.cascaded_public_ip is not None:
             self.installer.disassociate_elastic_address(
-                    self.cascaded_eip_public_ip)
+                    self.cascaded_public_ip)
             self.installer.release_elastic_address(
-                    self.cascaded_eip_allocation_id)
-            self.cascaded_eip_public_ip = None
-            self.cascaded_eip_allocation_id = None
+                    self.cascaded_public_ip_id)
+            self.cascaded_public_ip = None
+            self.cascaded_public_ip_id = None
 
         if self.cascaded_vm_id is not None:
             self.installer.terminate_instance(self.cascaded_vm_id)

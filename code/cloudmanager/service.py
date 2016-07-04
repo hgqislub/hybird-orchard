@@ -56,7 +56,7 @@ class CloudManager:
 
     def _read_env(self):
         try:
-            env_info = read_environment_info("AWS")
+            env_info = read_environment_info()
             self.env = env_info["env"]
             self.cascading_api_ip = env_info["cascading_api_ip"]
             self.cascading_domain = env_info["cascading_domain"]

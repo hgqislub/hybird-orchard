@@ -50,7 +50,7 @@ vcloud_cloud_data_file = os.path.join("/home/hybrid_cloud/data/vcloud",
 vcloud_cloud_data_file_lock = threading.Lock()
 
 
-class VcloudCloudDataHandler(object):
+class VcloudCloudInfoPersist(object):
     def __init__(self):
         pass
 

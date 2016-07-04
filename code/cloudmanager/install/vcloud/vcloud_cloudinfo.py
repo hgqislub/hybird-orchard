@@ -38,7 +38,7 @@ class VcloudCloudInfo:
         self.with_ceph = None
 
 
-    def initialize(self, cloud_params, install_info, proxy_info, installer):
+    def initialize(self, cloud_params, cloud_info):
         self.cloud_id = "@".join([cloud_params['vcloud_org'], cloud_params['vcloud_vdc'],
                              cloud_params['region_name'], cloud_params['azname']])    #get cloud id
 

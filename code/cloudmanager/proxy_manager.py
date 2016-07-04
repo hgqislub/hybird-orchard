@@ -30,24 +30,24 @@ def distribute_proxy():
                           "manageip": host["manageip"]
                           }
 
-            # proxy_free = True
-            # for role in host["roles"]:
-            #     if "compute-proxy" in role:
-            #         num = role.split("-")[1]
-            #         allocated_proxy_nums.append(num)
-            #         proxy_free = False
-            #         break
-            #
-            # if proxy_free:
-            #     free_proxy_list.append(proxy_info)
+            proxy_free = True
+            for role in host["roles"]:
+                if "compute-proxy" in role:
+                    num = role.split("-")[1]
+                    allocated_proxy_nums.append(num)
+                    proxy_free = False
+                    break
 
-            if len(host["roles"]) <= 2 and "normal" == host["status"]:
+            if proxy_free:
                 free_proxy_list.append(proxy_info)
-            else:
-                for role in host["roles"]:
-                    if "compute-proxy" in role:
-                        num = role.split("-")[1]
-                        allocated_proxy_nums.append(num)
+
+            # if len(host["roles"]) <= 2 and "normal" == host["status"]:
+            #     free_proxy_list.append(proxy_info)
+            # else:
+            #     for role in host["roles"]:
+            #         if "compute-proxy" in role:
+            #             num = role.split("-")[1]
+            #             allocated_proxy_nums.append(num)
 
         if 0 == len(free_proxy_list):
             aws_installer.install_aws_proxy()

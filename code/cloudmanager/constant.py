@@ -57,7 +57,6 @@ class Cascading(object):
     ENABLE_OPENSTACK_SERVICE = "enable_openstack_service.sh"
     UPDATE_PROXY_PARAMS = "modify_proxy_params.sh"
     ENV_FILE = "/home/hybrid_cloud/conf/environment.conf"
-    HWS_CONF_FILE = "/home/hybrid_cloud/conf/hws_install.conf"
 
 class AfterRebootConstant(object):
     REMOTE_SCRIPTS_DIR = "/home/hybrid_cloud/scripts/after_reboot/"
@@ -124,6 +123,8 @@ class FusionsphereConstant(object):
 class VcloudConstant(object):
     ROOT = "root"
     ROOT_PWD = "Huawei@CLOUD8!"
+    CLOUD_INFO_FILE = "/home/hybrid_cloud/data/vcloud/vcloud_access_cloud.data"
+    INSTALL_INFO_FILE = "/home/hybrid_cloud/data/vcloud/vcloud_access_cloud_install.data"
 
 class HwsConstant(object):
     ROOT = "root"

@@ -1,10 +1,17 @@
-    
+
+import sys
+sys.path.append('..')
+
+import os
+import pdb
 from heat.openstack.common import log as logging
 import install.vcloud.vcloud_install as vcloudinstaller
 
 import install.vcloud.vcloud_cloudinfo as vcloudcloudinfo
 import install.vcloud.vcloud_config as vcloudconfiger
 
+
+from subnet_manager import SubnetManager
 import proxy_manager
 
 LOG = logging.getLogger(__name__)
@@ -14,33 +21,31 @@ class CloudManager:
     def __init__(self,cloud_params):
         self.cloud_type = cloud_params['cloud_type']
         self.cloud_params = cloud_params
-        self.cloud_installer = SubCloud(self.cloud_params)
+        
 
     def add_cloud(self):
-        
+        cloudinstaller = SubCloud(self.cloud_params)
         #serviceinstaller = AddServie()
 
+        if(self.cloud_type != 'FS'):
+            proxy_info = cloudinstaller.deploy_proxy()    #deploy proxy
 
-        if self.cloud_type != 'FS':
-          #deploy proxy
-          proxy_info = self.cloud_installer.deploy_proxy()
+            cloudinstaller.cloud_preinstall()    #preinstall
 
-          #preinstall
-          self.cloud_installer.cloud_preinstall()
+            cloudinstaller.cloud_install()    #deploy cascaded and vpn
 
-          self.cloud_installer.cloud_install()    #deploy cascaded and vpn
+            install_info = cloudinstaller.package_installinfo()    #initialize the cloud params
+            cloudinstaller.cloudinfo.initialize(self.cloud_params, install_info, proxy_info, cloudinstaller.installer)
+            cloudinstaller.configer.initialize(self.cloud_params, install_info, proxy_info, cloudinstaller.cloudinfo, cloudinstaller.installer)
 
-          #initialize the cloud params
-          install_info = self.cloud_installer.package_installinfo()
-          self.cloud_installer.cloudinfo.initialize(self.cloud_params, install_info, proxy_info, self.cloud_installer.installer)
-          self.cloud_installer.configer.initialize(self.cloud_params, install_info, proxy_info, self.cloud_installer.cloudinfo, self.cloud_installer.installer)
+        cloudinstaller.cloud_postinstall(cloudinstaller.cloudinfo)    #postinstall
 
-        self.cloud_installer.cloud_postinstall(self.cloud_installer.cloudinfo)    #postinstall
-
-        #register cloud information
-        self.cloud_installer.register_cloud()
+        cloudinstaller.register_cloud()    #register cloud information
 
     def delete_cloud(self):
+        cloud_id = "@".join([self.cloud_params['vcloud_org'], self.cloud_params['vcloud_vdc'],
+                             self.cloud_params['region_name'], self.cloud_params['azname']])    #get cloud id
+
         cloudinstaller = SubCloud(self.cloud_params)    #initialize param
         install_info = cloudinstaller.installer.get_vcloud_access_cloud_install_info(installer=cloudinstaller.installer)
         cloudinstaller.cloudinfo = cloudinstaller.installer.get_vcloud_cloud()
@@ -108,17 +113,16 @@ class CloudManager:
         cloudinstaller.cloud_postuninstall()    #postuninstall
 
 class SubCloud(object):
-    def __init__(self, cloud_params):
+    def __init__(self,cloud_params):
         self.cloud_type = cloud_params['cloud_type']
         self.installer = None
         self.configer = None
         self.cloudinfo = None
         self.init_installer(cloud_params)
 
-    def init_installer(self, cloud_params):
-
-        if self.cloud_type == 'VCLOUD':
-            self.installer = vcloudinstaller.VcloudCloudInstaller(cloud_params=cloud_params)
+    def init_installer(self,cloud_params):
+        if(self.cloud_type == 'VCLOUD'):
+            self.installer =  vcloudinstaller.VcloudCloudInstaller(cloud_params=cloud_params)
             self.configer = vcloudconfiger.VcloudCloudConfig()
             self.cloudinfo = vcloudcloudinfo.VcloudCloudInfo()
 
@@ -134,8 +138,7 @@ class SubCloud(object):
     def package_installinfo(self):
         return self.installer.package_installinfo()
 
-    @staticmethod
-    def deploy_proxy():
+    def deploy_proxy(self):
         return proxy_manager.distribute_proxy()
 
     def delete_proxy(self):

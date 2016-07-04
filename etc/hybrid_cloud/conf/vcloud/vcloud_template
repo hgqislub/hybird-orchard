@@ -1,0 +1,28 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "VCLOUD CloudFormation Sample Template",
+  "Parameters" : {
+  },
+ "Resources" : {
+    "Test" : {
+      "Type" : "OS::Heat::vCloudCloud",
+      "Properties" : {
+        "CloudType" : "VCLOUD",
+        "AZName" : "az11",
+        "EnableNetworkCrossClouds": true
+        "DriverType":"agent",
+        "ProjectInfo":{
+            "RegionName" : "shenzhen",
+            "VcloudUrl" : "162.3.140.13",
+            "VcloudOrg" : "cms2",
+            "VcloudVdc" : "cms2",
+            "VcloudEdgegw" : "cms2",
+            "UserName" : "huawei",
+            "PassWd" : "huawei",
+            "LocalMode" : true,
+            "VcloudPublicIP" : "",
+            }
+        }
+    }
+  }
+}

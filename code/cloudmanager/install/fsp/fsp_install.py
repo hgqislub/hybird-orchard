@@ -14,7 +14,7 @@ import vcloud_cloudinfo as data_handler
 import json
 import heat.engine.resources.cloudmanager.region_mapping
 from heat.engine.resources.cloudmanager.subnet_manager import SubnetManager
-from vcloud_cloud_info_persist import VcloudCloudInfoPersist
+from vcloudcloudpersist import VcloudCloudDataHandler
 from heat.engine.resources.cloudmanager.util.retry_decorator import RetryDecorator
 from heat.engine.resources.cloudmanager.util.cloud_manager_exception import *
 
@@ -43,8 +43,6 @@ DHCP_IP_POOL_MAX = '200'
 
 NETMASK_24 = '255.255.255.0'
 
-MAX_RETRY = 100
-
 class VcloudCloudInstaller:
     def __init__(self, cloud_params=None):
         self.init_params(cloud_params)
@@ -58,79 +56,65 @@ class VcloudCloudInstaller:
 
         if cloud_params == None:
             return
-        self.cloud_params = cloud_params
-
+        self.region = cloud_params['region_name']
         self.az_name = cloud_params['az_name']
+        self.availability_zone = cloud_params['availability_zone']
+        self.vcloud_url = cloud_params['vcloud_url']
+        self.vcloud_org = cloud_params['vcloud_org']
+        self.vcloud_vdc = cloud_params['vcloud_vdc']
+        self.vcloud_edgegw = cloud_params['vcloud_edgegw']
+        self.username = cloud_params['username']
+        self.passwd = cloud_params['passwd']
         self.access = cloud_params['access']
         self.cloud_type = cloud_params['cloud_type']
-        self.driver_type = cloud_params['driver_type']
-        self.region = cloud_params['project_info']['region_name']
-        self.vcloud_url = cloud_params['project_info']['vcloud_url']
-        self.vcloud_org = cloud_params['project_info']['vcloud_org']
-        self.vcloud_vdc = cloud_params['project_info']['vcloud_vdc']
-        self.vcloud_edgegw = cloud_params['project_info']['vcloud_edgegw']
-        self.username = cloud_params['project_info']['username']
-        self.passwd = cloud_params['project_info']['passwd']
-        self.localmode = cloud_params['project_info']['localmode']
-        self.vcloud_publicip = cloud_params['project_info']['vcloud_publicip']
+        self.localmode = cloud_params['localmode']
+        self.vcloud_publicip = cloud_params['vcloud_publicip']
 
-
-
-        self.cloud_id = "@".join(["VCLOUD", self.cloud_params['azname']])    #get cloud id
+        self.cloud_id = "@".join([cloud_params['vcloud_org'], cloud_params['vcloud_vdc'],
+                             cloud_params['region_name'], cloud_params['azname']])    #get cloud id
 
         self.install_data_handler = \
             VcloudCloudInfoPersist(constant.VcloudConstant.INSTALL_INFO_FILE, self.cloud_id)
         self.cloud_info_handler = \
             VcloudCloudInfoPersist(constant.VcloudConstant.CLOUD_INFO_FILE, self.cloud_id)
 
-        #ips for NAT
-        self.free_public_ip = []
+        #decide to use default subnet or not
+        if cloud_params["network"] is None :
+            self.internal_base_cidr = cloud_params["network"]["internal_base_cidr"]
+            self.internal_base_name = cloud_params["network"]["internal_base_name"]
+            self.external_api_cidr = cloud_params["network"]["external_api_cidr"]
+            self.external_api_name = cloud_params["network"]["external_api_name"]
+            self.tunnel_bearing_cidr = cloud_params["network"]["tunnel_bearing_cidr"]
+            self.tunnel_bearing_name = cloud_params["network"]["tunnel_bearing_name"]
+        else :
+            self.internal_base_cidr = self.default_internal_base_cidr
+            self.internal_base_name = self.default_internal_base_name
+            self.external_api_cidr = self.default_external_api_cidr
+            self.external_api_name = self.default_external_api_name
+            self.tunnel_bearing_cidr = self.default_tunnel_bearing_cidr
+            self.tunnel_bearing_name = self.default_tunnel_bearing_name
 
-    def _allocate_subnets_cidr(self):
-        if self.external_api_cidr is None:
-            network = self.cloud_params["network"]
-            if network is not None :
-                self.internal_base_cidr = network["internal_base_cidr"]
-                self.internal_base_name = network["internal_base_name"]
-                self.external_api_cidr = network["external_api_cidr"]
-                self.external_api_name = network["external_api_name"]
-                self.tunnel_bearing_cidr = network["tunnel_bearing_cidr"]
-                self.tunnel_bearing_name = network["tunnel_bearing_name"]
-            else :
-                self.internal_base_cidr = self.default_internal_base_cidr
-                self.internal_base_name = self.default_internal_base_name
-                self.external_api_name = self.default_external_api_name
-                self.tunnel_bearing_name = self.default_tunnel_bearing_name
-
-                subnet_manager = SubnetManager()
-                subnet_pair = subnet_manager.distribute_subnet_pair\
-                    (self.default_external_api_cidr,  self.default_tunnel_bearing_cidr, constant.HwsConstant.INSTALL_INFO_FILE)
-                self.external_api_cidr = subnet_pair["external_api_cidr"]
-                self.tunnel_bearing_cidr = subnet_pair["tunnel_bearing_cidr"]
-
-        self.install_data_handler.write_subnets_cidr(
-                                                     self.external_api_cidr,
-                                                     self.tunnel_bearing_cidr,
-                                                     self.internal_base_cidr,
-                                                     self.internal_base_name,
-                                                     self.tunnel_bearing_name,
-                                                     self.external_api_name
-                                                     )
+        #breakpoint flag
+        self.cascaded_vm_created = None
+        self.cascaded_vpn_vm_created = None
+        self.external_api_existed = None
+        self.tunnel_bearing_existed = None
+        self.internal_base_existed = None
 
 
     def _read_env(self):
         try:
-            env_info = conf_util.read_conf(constant.Cascading.ENV_FILE)
+            env_info = read_environment_info(self.cloud_type)
             self.env = env_info["env"]
             self.cascading_api_ip = env_info["cascading_api_ip"]
             self.cascading_domain = env_info["cascading_domain"]
-            self.cascading_vpn_ip = env_info["local_vpn_ip"]
-            self.cascading_vpn_public_gw = env_info["local_vpn_public_gw"]
+            self.local_vpn_ip = env_info["local_vpn_ip"]
+            self.local_vpn_public_gw = env_info["local_vpn_public_gw"]
             self.cascading_eip = env_info["cascading_eip"]
-            self.cascading_api_subnet = env_info["local_api_subnet"]
-            self.cascading_vpn_api_ip = env_info["local_vpn_api_ip"]
-            self.cascading_tunnel_subnet = env_info["local_tunnel_subnet"]
-            self.cascading_vpn_tunnel_ip = env_info["local_vpn_tunnel_ip"]
+            self.local_api_subnet = env_info["local_api_subnet"]
+            self.local_vpn_api_ip = env_info["local_vpn_api_ip"]
+            self.local_tunnel_subnet = env_info["local_tunnel_subnet"]
+            self.local_vpn_tunnel_ip = env_info["local_vpn_tunnel_ip"]
             self.existed_cascaded = env_info["existed_cascaded"]
         except ReadEnvironmentInfoFailure as e:
             LOG.error(
@@ -139,70 +123,45 @@ class VcloudCloudInstaller:
             raise ReadEnvironmentInfoFailure(error=e.message)
 
     def _read_install_info(self):
-        #init prarms
         self.cascaded_vm_created = None
-
-        self.public_ip_api_reverse = None
-        self.public_ip_api_forward = None
-        self.public_ip_ntp_server = None
-        self.public_ip_ntp_client = None
-        self.public_ip_cps_web = None
-
-        self.cascaded_vpn_vm_created = None
-        self.public_ip_vpn = None
-
         self.cascaded_vpn_vm_created = None
 
-        self.external_api_existed = None
-        self.tunnel_bearing_existed = None
-        self.internal_base_existed = None
-
-        self.external_api_cidr = None
-        self.tunnel_bearing_cidr = None
-        self.internal_base_cidr = None
-        self.external_api_name = None
-        self.tunnel_bearing_name = None
-        self.internal_base_name = None
-
-        install_info = self.install_data_handler.read_cloud_info()
+        install_info = self.install_data_handler.get_vcloud_access_cloud(self.cloud_id)
         if not install_info:
             return
 
         if "cascaded" in install_info.keys():
             cascaded_info = install_info["cascaded"]
             self.cascaded_vm_created = cascaded_info["cascaded_vm_created"]
-
-        if "cascaded_public_ip" in install_info.keys():
-            cascaded_public_ip = install_info["cascaded_public_ip"]
-            self.public_ip_api_reverse = cascaded_public_ip['public_ip_api_reverse']
-            self.public_ip_api_forward = cascaded_public_ip['public_ip_api_forward']
-            self.public_ip_ntp_server = cascaded_public_ip['public_ip_ntp_server']
-            self.public_ip_ntp_client = cascaded_public_ip['public_ip_ntp_client']
-            self.public_ip_cps_web = cascaded_public_ip['public_ip_cps_web']
+            self.external_api_ip = cascaded_info["external_api_ip"]
+            self.tunnel_bearing_ip = cascaded_info["tunnel_bearing_ip"]
+            self.internal_base_ip = cascaded_info["internal_base_ip"]
+            #ip for vcloud NAT
+            self.public_ip_api_reverse = cascaded_info["public_ip_api_reverse"]
+            self.public_ip_api_forward = cascaded_info["public_ip_api_forward"]
+            self.public_ip_ntp_server = cascaded_info["public_ip_ntp_server"]
+            self.public_ip_ntp_client = cascaded_info["public_ip_ntp_client"]
+            self.public_ip_cps_web = cascaded_info["public_ip_cps_web"]
 
         if "cascaded_vpn" in install_info.keys():
             vpn_info = install_info["vpn"]
             self.cascaded_vpn_vm_created = vpn_info["cascaded_vpn_vm_created"]
             self.public_ip_vpn = vpn_info["public_ip_vpn"]
+            self.vpn_api_ip =  vpn_info["vpn_api_ip"]
+            self.vpn_tunnel_ip =  vpn_info["vpn_tunnel_ip"]
+            self.vcloud_publicip = vpn_info["ext_net_publicip"]
 
-        if "vpn_public_ip" in install_info.keys():
-            vpn_public_ip = install_info["vpn_public_ip"]
-            self.cascaded_vpn_vm_created = vpn_public_ip["vpn_public_ip"]
-
-        if "subnets" in install_info.keys():
-            cascaded_subnet_info = install_info["subnets"]
+        if "network" in install_info.keys():
+            cascaded_subnet_info = install_info["cascaded_subnet_info"]
+            self.external_api = cascaded_subnet_info["external_api"]
+            self.external_api_name = cascaded_subnet_info["external_api_name"]
             self.external_api_existed = cascaded_subnet_info["external_api_existed"]
+            self.tunnel_bearing = cascaded_subnet_info["tunnel_bearing"]
+            self.tunnel_bearing_name = cascaded_subnet_info["tunnel_bearing_name"]
             self.tunnel_bearing_existed = cascaded_subnet_info["tunnel_bearing_existed"]
+            self.internal_base = cascaded_subnet_info["internal_base"]
+            self.internal_base_name = cascaded_subnet_info["internal_base_name"]
             self.internal_base_existed = cascaded_subnet_info["internal_base_existed"]
-
-        if "subnets_cidr" in install_info.keys():
-            cascaded_subnets_cidr_info = install_info["subnets_cidr"]
-            self.external_api_cidr = cascaded_subnets_cidr_info["external_api_cidr"]
-            self.tunnel_bearing_cidr = cascaded_subnets_cidr_info["tunnel_bearing_cidr"]
-            self.internal_base_cidr = cascaded_subnets_cidr_info["internal_base_cidr"]
-            self.external_api_name = cascaded_subnets_cidr_info["external_api_cidr"]
-            self.tunnel_bearing_name = cascaded_subnets_cidr_info["tunnel_bearing_cidr"]
-            self.internal_base_name = cascaded_subnets_cidr_info["internal_base_cidr"]
 
         if "proxy_info" in install_info.keys():
             self.proxy_info = install_info["proxy_info"]
@@ -254,7 +213,7 @@ class VcloudCloudInstaller:
                 self.installer.block_until_completed(result)
                 return True
         except Exception :
-            raise InstallCascadedFailed('create vm faild with exception vapp=%s. vdc=%s' %(vapp_name,self.vcloud_vdc))
+            LOG.error('create vm faild with exception vapp=%s. vdc=%s' %(vapp_name,self.vcloud_vdc))
 
     def delete_vm(self, vapp_name):
         try :
@@ -354,11 +313,8 @@ class VcloudCloudInstaller:
                       self.tunnel_bearing_cidr.split(2), DHCP_IP_POOL_MAX])
 
     def cloud_preinstall(self):
-        #decide to use default subnet or not
-        self._allocate_subnets_cidr()
         #allocate subnet ip
         self._allocate_subnet_ips()
-
 
         self.installer_login()
         network_num = []
@@ -486,8 +442,8 @@ class VcloudCloudInstaller:
             self.external_api_existed = 'true'
             install_data_handler.write_subnets_info(self.cloud_id,
                                            self.internal_base_existed,
-                                           self.tunnel_bearing_existed
-
+                                           self.tunnel_bearing_existed,
+                                           self.external_api_existed,
                                            )
         else :
             LOG.info('one or more vcloud vdc network create failed. retry more times')
@@ -538,7 +494,7 @@ class VcloudCloudInstaller:
             else :
                 LOG.info('create vapp network success network=%s vapp=%s.' %(network_name, the_vapp.name))
         except Exception :
-            raise InstallCascadedFailed('create vapp network failed  with excption network=%s vapp=%s.' %(network_name, the_vapp.name))
+            LOG.error('create vapp network failed  with excption network=%s vapp=%s.' %(network_name, the_vapp.name))
 
     def connect_vms_to_vapp_network(self, network_name, vapp_name, nic_index=0, primary_index=0,
                                     mode='DHCP', ipaddr=None):
@@ -559,8 +515,7 @@ class VcloudCloudInstaller:
             else :
                 LOG.info('connect vms to vapp network success network=%s vapp=%s.' %(network_name, vapp_name))
         except Exception :
-            raise InstallCascadedFailed('connect vms to vapp network failed with excption network=%s vapp=%s.' %(network_name, vapp_name))
-
+            LOG.error('connect vms to vapp network failed with excption network=%s vapp=%s.' %(network_name, vapp_name))
 
     def add_nat_rule(self, original_ip, translated_ip):
         try :
@@ -587,7 +542,7 @@ class VcloudCloudInstaller:
             else :
                 LOG.info('add nat rule success vdc=%s .' %(self.vcloud_vdc))
         except Exception :
-            raise InstallCascadedFailed('add nat rule failed with excption vdc=%s .' %(self.vcloud_vdc))
+            LOG.error('add nat rule failed with excption vdc=%s .' %(self.vcloud_vdc))
 
     def delete_nat_rule(self, original_ip, translated_ip):
         try :
@@ -654,9 +609,6 @@ class VcloudCloudInstaller:
         except Exception :
             LOG.error('delete dhcp failed with excption vdc=%s .' %(self.vcloud_vdc))
 
-    @RetryDecorator(max_retry_count=MAX_RETRY,
-                raise_exception=InstallCascadedFailed(
-                    current_step="create vm"))
     def vapp_deploy(self,vapp_name):
         try :
             the_vdc=self.installer.get_vdc(self.vcloud_vdc)
@@ -664,12 +616,12 @@ class VcloudCloudInstaller:
             task=the_vapp.deploy(powerOn='True')
             result = self.installer.block_until_completed(task)
             if result == False:
-                raise InstallCascadedFailed('power on vapp=%s failed vdc=%s .' %(vapp_name,self.vcloud_vdc))
+                LOG.error('power on vapp=%s failed vdc=%s .' %(vapp_name,self.vcloud_vdc))
             else :
                 LOG.info('power on vapp=%s success vdc=%s .' %(vapp_name,self.vcloud_vdc))
             time.sleep(20)
         except Exception :
-            raise InstallCascadedFailed('power on vapp=%s failed with excption vdc=%s .' %(vapp_name,self.vcloud_vdc))
+            LOG.error('power on vapp=%s failed with excption vdc=%s .' %(vapp_name,self.vcloud_vdc))
 
     def vapp_undeploy(self,vapp_name):
         try :
@@ -716,70 +668,59 @@ class VcloudCloudInstaller:
          self._install_cascaded()
 
     def _install_cascaded(self):
-        self.installer_login()
-
+        #pdb.set_trace()
         if self.cascaded_vm_created is None:
+            self.installer_login()
+
 
             result = self.create_vm(vapp_name=self.cascaded_image,
                                              template_name=self.cascaded_image,
                                              catalog_name=self.catalog_name)
             if result == False :
-                raise InstallCascadedFailed("create cascaded vm failed.")
+                LOG.info("create cascaded vm failed.")
+            else :
+               self.create_vapp_network(network_name=self.internal_base_name, vapp_name=self.cascaded_image)    #create vapp network
+               self.create_vapp_network(network_name=self.external_api_name, vapp_name=self.cascaded_image)
+               self.create_vapp_network(network_name=self.tunnel_bearing_name, vapp_name=self.cascaded_image)
+               time.sleep(10)
 
-            self.cascaded_vm_created = 'true'
-            install_data_handler.write_cascaded(self.cloud_id,
-                                                self.cascaded_vm_created
-                                               )
+               self.connect_vms_to_vapp_network(network_name=self.internal_base_name, vapp_name=self.cascaded_image, nic_index=0, primary_index=0,
+                                                mode='MANUAL', ipaddr=self.cascaded_base_ip)
+               self.connect_vms_to_vapp_network(network_name=self.external_api_name, vapp_name=self.cascaded_image, nic_index=1, primary_index=None,
+                                                mode='MANUAL', ipaddr=self.cascaded_api_ip)
+               self.connect_vms_to_vapp_network(network_name=self.tunnel_bearing_name, vapp_name=self.cascaded_image, nic_index=2, primary_index=None,
+                                                mode='MANUAL', ipaddr=self.cascaded_tunnel_ip)
+               if self.localmode == True :
+                   self.public_ip_api_reverse = self.get_free_public_ip()    #add NAT rules to connect ext net
+                   self.public_ip_api_forward = self.get_free_public_ip()
+                   self.public_ip_ntp_server = self.get_free_public_ip()
+                   self.public_ip_ntp_client = self.get_free_public_ip()
+                   self.public_ip_cps_web = self.get_free_public_ip()
+                   self.add_nat_rule(original_ip=self.public_ip_api_reverse, translated_ip=self.external_api_ip)
+                   self.add_nat_rule(original_ip=self.public_ip_api_forward, translated_ip=self.external_api_ip_forward)
+                   self.add_nat_rule(original_ip=self.public_ip_ntp_server, translated_ip=self.ntp_ip_active)
+                   self.add_nat_rule(original_ip=self.public_ip_ntp_client, translated_ip=self.ntp_ip_standby)
+                   self.add_nat_rule(original_ip=self.public_ip_cps_web, translated_ip=CPS_WEB_IP)
+               else :
+                   self.public_ip_api_reverse = None    #no need to allocate public ip or add NAT rules
+                   self.public_ip_api_forward = None
+                   self.public_ip_ntp_server = None
+                   self.public_ip_ntp_client = None
+                   self.public_ip_cps_web = None
 
+               self.add_dhcp_pool()    #add dhcp pool
+
+               self.vapp_deploy(vapp_name=self.cascaded_image)    #poweron the vapp
+
+               self.installer_logout()
+               self.cascaded_vm_created = 'true'
+               install_data_handler.write_cascaded(self.cloud_id,
+                                           self.cascaded_vm_created
+                                           )
+
+            LOG.info("install cascaded success.")
         else :
             LOG.info("the cascaded in this vcloud already existed.")
-
-
-        self.create_vapp_network(network_name=self.internal_base_name, vapp_name=self.cascaded_image)    #create vapp network
-        self.create_vapp_network(network_name=self.external_api_name, vapp_name=self.cascaded_image)
-        self.create_vapp_network(network_name=self.tunnel_bearing_name, vapp_name=self.cascaded_image)
-        time.sleep(10)
-
-        self.connect_vms_to_vapp_network(network_name=self.internal_base_name, vapp_name=self.cascaded_image, nic_index=0, primary_index=0,
-                                                mode='MANUAL', ipaddr=self.cascaded_base_ip)
-        self.connect_vms_to_vapp_network(network_name=self.external_api_name, vapp_name=self.cascaded_image, nic_index=1, primary_index=None,
-                                                mode='MANUAL', ipaddr=self.cascaded_api_ip)
-        self.connect_vms_to_vapp_network(network_name=self.tunnel_bearing_name, vapp_name=self.cascaded_image, nic_index=2, primary_index=None,
-                                                mode='MANUAL', ipaddr=self.cascaded_tunnel_ip)
-        if self.localmode == True :
-            if self.public_ip_api_reverse is None:
-                self.public_ip_api_reverse = self.get_free_public_ip()    #add NAT rules to connect ext net
-                self.public_ip_api_forward = self.get_free_public_ip()
-                self.public_ip_ntp_server = self.get_free_public_ip()
-                self.public_ip_ntp_client = self.get_free_public_ip()
-                self.public_ip_cps_web = self.get_free_public_ip()
-            install_data_handler.write_cascaded_public_ip(self.cloud_id,
-                                                          self.public_ip_api_reverse,
-                                                          self.public_ip_api_forward,
-                                                          self.public_ip_ntp_server,
-                                                          self.public_ip_ntp_client,
-                                                          self.public_ip_cps_web
-                                                          )
-            self.add_nat_rule(original_ip=self.public_ip_api_reverse, translated_ip=self.external_api_ip)
-            self.add_nat_rule(original_ip=self.public_ip_api_forward, translated_ip=self.external_api_ip_forward)
-            self.add_nat_rule(original_ip=self.public_ip_ntp_server, translated_ip=self.ntp_ip_active)
-            self.add_nat_rule(original_ip=self.public_ip_ntp_client, translated_ip=self.ntp_ip_standby)
-            self.add_nat_rule(original_ip=self.public_ip_cps_web, translated_ip=CPS_WEB_IP)
-        else :
-            self.public_ip_api_reverse = None    #no need to allocate public ip or add NAT rules
-            self.public_ip_api_forward = None
-            self.public_ip_ntp_server = None
-            self.public_ip_ntp_client = None
-            self.public_ip_cps_web = None
-
-        self.add_dhcp_pool()    #add dhcp pool
-
-        self.vapp_deploy(vapp_name=self.cascaded_image)    #poweron the vapp
-
-        self.installer_logout()
-
-
-        LOG.info("install cascaded success.")
 
     def uninstall_cascaded(self):
         self._uninstall_cascaded()
@@ -810,49 +751,42 @@ class VcloudCloudInstaller:
         self._install_vpn()
 
     def _install_vpn(self):
-        self.installer_login()
         if self.cascaded_vpn_vm_created is None:
-
+            self.installer_login()
 
             result = self.create_vm(vapp_name=self.vpn_image,
                                               template_name=self.vpn_image,
                                               catalog_name=self.catalog_name)
 
             if result == False :
-                raise InstallCascadedFailed("create vpn vm failed.")
+                LOG.info("create vpn vm failed.")
+            else :
 
+                self.create_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image)    #create vapp network
+                self.create_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image)
+                time.sleep(10)
+
+                self.connect_vms_to_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image, nic_index=0, primary_index=None,
+                                                 mode='MANUAL', ipaddr=self.vpn_external_api_ip)    #connect vms to vapp network
+                self.connect_vms_to_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image, nic_index=1, primary_index=None,
+                                                 mode='MANUAL', ipaddr=self.vpn_tunnel_bearing_ip)
+
+
+            self.vpn_public_ip = self.get_free_public_ip()    #add NAT rule to connect ext net
+            self.add_nat_rule(original_ip=self.public_ip_vpn, translated_ip=self.vpn_external_api_ip)
+
+
+            self.vapp_deploy(vapp_name=self.vpn_image)    #poweron the vapp
+
+            self.installer.logout()
             self.cascaded_vpn_vm_created = 'true'
             install_data_handler.write_vpn(self.cloud_id,
                                           self.cascaded_vpn_vm_created
                                     )
+
+            LOG.info("install vpn success.")
         else :
             LOG.info("the vpn in this vcloud already existed.")
-
-
-        self.create_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image)    #create vapp network
-        self.create_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image)
-        time.sleep(10)
-
-        self.connect_vms_to_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image, nic_index=0, primary_index=None,
-                                                 mode='MANUAL', ipaddr=self.vpn_external_api_ip)    #connect vms to vapp network
-        self.connect_vms_to_vapp_network(network_name=self.external_api_name, vapp_name=self.vpn_image, nic_index=1, primary_index=None,
-                                                 mode='MANUAL', ipaddr=self.vpn_tunnel_bearing_ip)
-
-        if self.vpn_public_ip is None:
-            self.vpn_public_ip = self.get_free_public_ip()    #add NAT rule to connect ext net
-            install_data_handler.write_vpn_public_ip(self.cloud_id,
-                                                          self.vpn_public_ip
-                                                          )
-
-        self.add_nat_rule(original_ip=self.public_ip_vpn, translated_ip=self.vpn_external_api_ip)
-
-
-        self.vapp_deploy(vapp_name=self.vpn_image)    #poweron the vapp
-
-        self.installer.logout()
-
-        LOG.info("install vpn success.")
-
 
 
     def uninstall_vpn(self):

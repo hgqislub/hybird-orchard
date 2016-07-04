@@ -276,7 +276,7 @@ class HwsConfig(object):
         self._config_cascading_route()
         self._config_cascaded_route()
 
-
+        self._enable_network_cross()
 
 
 
@@ -341,6 +341,7 @@ class HwsConfig(object):
     def config_cascading(self):
         #TODO(lrx):remove v2v_gw
         LOG.info("config cascading")
+        self.remove_keystone()
         cascading_cf = CascadingConfiger(
                 cascading_ip=self.install_info["cascading_info"]["external_api_ip"],
                 user=constant.Cascading.ROOT,
@@ -452,6 +453,8 @@ class HwsConfig(object):
                     host=host_ip, user=user, password=passwd,
                      cmd='cd %(dis)s; sh %(script)s '
                         '%(proxy_num)s %(proxy_host_name)s %(cascaded_domain)s '
+                        '%(local_api_subnet)s %(cloud_vpn_api_ip)s '
+                        '%(local_tunnel_subnet)s %(cloud_vpn_tunnel_ip)s '
                         '%(cascading_domain)s'
                         % {"dis": constant.PatchesConstant.REMOTE_SCRIPTS_DIR,
                            "script":
@@ -459,7 +462,11 @@ class HwsConfig(object):
                            "proxy_num": proxy_info["proxy_num"],
                            "proxy_host_name": proxy_info["id"],
                            "cascaded_domain": cascaded_domain,
-                            "cascading_domain": install_info["cascading_info"]["domain"]})
+                           "local_api_subnet": install_info['cascading_subnets_info']['external_api'],
+                           "cloud_vpn_api_ip": install_info["cascaded_vpn_info"]["external_api_ip"],
+                           "local_tunnel_subnet": install_info['cascading_subnets_info']['tunnel_bearing'],
+                           "cloud_vpn_tunnel_ip": install_info["cascaded_vpn_info"]["tunnel_bearing_ip"],
+                           "cascading_domain": install_info["cascading_info"]["domain"]})
                 return True
             except Exception as e:
                 LOG.error("config patch tool error, error: %s"
@@ -527,6 +534,7 @@ class HwsConfig(object):
                 continue
 
         return True
+
     @staticmethod
     def _restart_nova_computer(host_ip, user, passwd):
         execute_cmd_without_stdout(
@@ -589,12 +597,6 @@ class HwsConfig(object):
                 continue
 
         return True
-
-    def config_extnet(self):
-        self._config_extnet()
-
-    def _config_extnet(self):
-        self._enable_network_cross()
 
     def remove_existed_cloud(self):
         if self.install_info is None:

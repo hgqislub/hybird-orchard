@@ -23,8 +23,6 @@ def read_environment_info(cloud_type):
         env_data_file = os.path.join(env_data_dir+'/vcloud',end_data_file)
     elif(cloud_type == 'AWS'):
         env_data_file = os.path.join(env_data_dir+'/aws',end_data_file)
-    elif(cloud_type == 'HWS'):
-        env_data_file = os.path.join(env_data_dir+'/hws',end_data_file)
 
     if not os.path.exists(env_data_file):
         LOG.error("read %s : No such file." % env_data_file)
@@ -41,8 +39,6 @@ def write_environment_info(cloud_type):
         env_data_file = os.path.join(env_data_dir+'/vcloud',end_data_file)
     elif(cloud_type == 'AWS'):
         env_data_file = os.path.join(env_data_dir+'/aws',end_data_file)
-    elif(cloud_type == 'HWS'):
-        env_data_file = os.path.join(env_data_dir+'/hws',end_data_file)
 
     environment_info = {"env": "/root/adminrc",
                         "cascading_api_ip": "162.3.121.2",

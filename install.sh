@@ -5,11 +5,6 @@ DEST_CONF_FILE="/home/hybrid_cloud/"
 CMS_FILE="./code/*"
 DEST_CMS_FILE_PATH="/usr/lib64/python2.6/site-packages/heat/engine/resources/"
 
-files=$(find ./ -name "*.sh")
-for file in $files
-do
-    dos2unix $file
-done
 install() {
     echo "init '/home/hybrid_cloud' dir..."
     cp -r ./etc/hybrid_cloud/* /home/hybrid_cloud/
@@ -71,6 +66,6 @@ elif [ "$1" == "update" ]; then
 elif [ "$1" == "rollback" ]; then
     rollback $2
 else
-    echo "Usage: sh $0 install {install|backup|update|rollback}"
+    echo "Usage: sh $0 install {install|backup|update|rollback 20160608-15:28:07}"
 fi
 

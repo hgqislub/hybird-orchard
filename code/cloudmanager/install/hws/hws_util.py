@@ -343,15 +343,3 @@ class HwsInstaller(object):
         if not status.startswith(RSP_STATUS_OK):
             LOG.error(result)
             raise InstallCascadedFailed(current_step="unbound vpn ip-mac")
-
-    @RetryDecorator(max_retry_count=MAX_RETRY,
-        raise_exception=InstallCascadedFailed(
-        current_step="get image id"))
-    def get_image_id(self, name):
-        result = self.hws_client.ims.list(name=name)
-        status = str(result[RSP_STATUS])
-        if not status.startswith(RSP_STATUS_OK):
-            LOG.error(result)
-            raise InstallCascadedFailed(current_step="get image id")
-        image_id = result[RSP_BODY]["images"][0]["id"]
-        return image_id

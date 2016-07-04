@@ -6,14 +6,11 @@ import os
 import json
 from heat.openstack.common import log as logging
 
-from conf_util import *
-
 LOG = logging.getLogger(__name__)
 
 subnet_manager_lock = threading.Lock()
 
-SUBNET_ID_MAX = 129
-
+SUBNET_ID_MAX=128
 
 class SubnetManager(object):
     def __init__(self):
@@ -31,18 +28,17 @@ class SubnetManager(object):
                 else:
                     subnet_id = free_id
                     break
-            if subnet_id == SUBNET_ID_MAX-1:
+            if subnet_id == 0:
                 LOG.error("no more subnet can be allocate")
                 return None
 
             subnet_info["allocate"].append(subnet_id)
 
-            api_subnet = ".".join([api_cidr.split('.')[0], api_cidr.split('.')[1], '%s', api_cidr.split('.')[3]])
-            tunnel_subnet = ".".join(
-                    [tunnel_cidr.split('.')[0], tunnel_cidr.split('.')[1], '%s', tunnel_cidr.split('.')[3]])
+            api_subnet = ".".join([ api_cidr.split('.')[0], api_cidr.split('.')[1], '%s', api_cidr.split('.')[3] ])
+            tunnel_subnet = ".".join([ tunnel_cidr.split('.')[0], tunnel_cidr.split('.')[1], '%s', tunnel_cidr.split('.')[3] ])
 
             api_subnet = api_subnet % subnet_id
-            tunnel_subnet = tunnel_subnet % (subnet_id + 128)
+            tunnel_subnet = tunnel_subnet % (subnet_id+128)
 
             self.__write_subnet_info__(subnet_info, data_file)
 
@@ -71,32 +67,21 @@ class SubnetManager(object):
             return True
         except Exception as e:
             LOG.error("release subnet pair error, subnet_pair: %s, error: %s"
-                      % (subnet_pair, e.message))
+                         % (subnet_pair, e.message))
         finally:
             subnet_manager_lock.release()
 
     @staticmethod
     def __get_subnet_info__(subnet_data_file):
-        cloud_info = read_conf(subnet_data_file)
-        if "subnet_info" not in cloud_info.keys():
-            subnet_info = {"allocate": []}
+        if not os.path.exists(subnet_data_file):
+            subnet_info = {"allocate":[]}
         else:
-            subnet_info = cloud_info["subnet_info"]
+            with open(subnet_data_file, 'r+') as fd:
+                tmp = fd.read()
+                subnet_info = json.loads(tmp)["subnet_info"]
         return subnet_info
 
     @staticmethod
     def __write_subnet_info__(subnet_info, subnet_data_file):
-        cloud_info = read_conf(subnet_data_file)
-        cloud_info["subnet_info"] = subnet_info
-        write_conf(subnet_data_file, cloud_info)
-
-
-if __name__ == '__main__':
-    f = "D:\\test.txt"
-    print SubnetManager.__get_subnet_info__(f)
-    subnet_info = dict()
-    alloc = [1, 2, 3]
-    alloc.append(1)
-    subnet_info["allocate"] = alloc
-    SubnetManager.__write_subnet_info__(subnet_info, f)
-    print SubnetManager.__get_subnet_info__(f)
+        with open(subnet_data_file, 'w+') as fd:
+            fd.write(json.dumps(subnet_info, indent=4))

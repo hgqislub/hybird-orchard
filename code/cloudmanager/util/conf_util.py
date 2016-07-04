@@ -1,3 +1,4 @@
+import os
 
 from heat.openstack.common import log as logging
 import json
@@ -114,12 +115,14 @@ class CloudInfoHandler:
         finally:
             self._file_lock.release()
 
-
-
 if __name__ == '__main__':
-    read_conf("D:\\test.txt")
+    conf = read_conf("D:\\test.txt")
     handler = CloudInfoHandler("D:\\test.txt", "cloud1")
     vpn = dict()
     vpn["name"]="hgq1"
-    vpn["id"]=1234
+    vpn["id"]=[1,15]
     handler.write_unit_info("vpn", vpn)
+    print conf["cloud1"]["vpn"]["id"]
+    list = conf["cloud1"]["vpn"]["id"]
+    list.append(156)
+    print list

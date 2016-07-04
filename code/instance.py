@@ -1105,121 +1105,92 @@ class Cloud(resource.Resource):
 
 class vCloudCloud(resource.Resource):
     PROPERTIES = (
-        CLOUD_TYPE, AZNAME, AVAILABILITY_ZONE, VCLOUD_URL, VCLOUD_ORG, VCLOUD_VDC, VCLOUD_EDGEGW, USER_NAME,
-        PASSWD, REGION_NAME, DRIVER_TYPE,
-        ENABLE_NETWORK_CROSS_CLOUDS,LOCAL_MODE,VCLOUD_PUBLIC_IP
+        CLOUD_TYPE, AZNAME,  DATA_CENTER, PROJECT_INFO,
+        CASCADED, VPN, NETWORK, PROXY,
+        DRIVER_TYPE, ENABLE_NETWORK_CROSS_CLOUDS,EXTRA
     ) = (
-        'CloudType', 'AZName', 'AvailabilityZone', 'VcloudUrl', 'VcloudOrg', 'VcloudVdc','VcloudEdgegw',
-        'UserName', 'PassWd', 'RegionName', 'DriverType',
-        'EnableNetworkCrossClouds','LocalMode','VcloudPublicIP'
+        'CloudType', 'AZName', 'DataCenter','ProjectInfo',
+        'Cascaded', 'Vpn', 'Network', 'Proxy',
+        'DriverType', 'EnableNetworkCrossClouds','Extra'
     )
 
     properties_schema = {
         CLOUD_TYPE: properties.Schema(
             properties.Schema.STRING,
-            _('Nova instance type (flavor).')
+            _('Type of cloud.')
         ),
         AZNAME: properties.Schema(
             properties.Schema.STRING,
-            _('Availability zone name of the cloud.')
+            _('Availability zone name of hybrid cloud.')
         ),
-        AVAILABILITY_ZONE: properties.Schema(
+        DATA_CENTER: properties.Schema(
             properties.Schema.STRING,
-            _('Availability zone of the cloud.')
+            _('data center name.')
         ),
-        VCLOUD_URL: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud url.')
+        PROJECT_INFO: properties.Schema(
+            properties.Schema.MAP,
+            _('project info of hws account.')
         ),
-        VCLOUD_ORG: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud organization.')
+        CASCADED: properties.Schema(
+            properties.Schema.MAP,
+            _('cascaded info, like image, flavor...')
         ),
-        VCLOUD_VDC: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud organization vdc.')
+        VPN: properties.Schema(
+            properties.Schema.MAP,
+            _('vpn info, like image, flavor...')
         ),
-        VCLOUD_EDGEGW: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud edge gateway.')
+        PROXY: properties.Schema(
+            properties.Schema.MAP,
+            _('proxy info, like image, flavor...')
         ),
-        USER_NAME: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud vdc username.')
+        NETWORK: properties.Schema(
+            properties.Schema.MAP,
+            _('network info. like vpc, subnet')
         ),
-        PASSWD: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud vdc password.')
-        ),
-        REGION_NAME: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud region name.')
+        EXTRA: properties.Schema(
+            properties.Schema.MAP,
+            _('something else')
         ),
         DRIVER_TYPE: properties.Schema(
             properties.Schema.STRING,
-            _('Network driver type, agent or agentless.')
+            _('Network driver type, agent or agent_less.')
         ),
         ENABLE_NETWORK_CROSS_CLOUDS: properties.Schema(
             properties.Schema.BOOLEAN,
             _('Enable network cross clouds.')
-        ),
-        LOCAL_MODE: properties.Schema(
-            properties.Schema.BOOLEAN,
-            _('Local cascading or not.')
-        ),
-        VCLOUD_PUBLIC_IP: properties.Schema(
-            properties.Schema.STRING,
-            _('Vcloud public ip.')
         )
     }
 
     def __init__(self, name, json_snippet, stack):
         super(vCloudCloud, self).__init__(name, json_snippet, stack)
+        self.cloud_params = dict()
+        self.cloud_params['cloud_type'] = self.properties.get(self.CLOUD_TYPE)
+        self.cloud_params['azname'] = self.properties.get(self.AZNAME)
+        self.cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
+        self.cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
+
+        self.cloud_params['project_info'] = self.properties.get(self.PROJECT_INFO)
+        self.cloud_params['proxy'] = self.properties.get(self.PROXY)
+        self.cloud_params['cascaded_info'] = self.properties.get(self.CASCADED)
+        self.cloud_params['vpn_info'] = self.properties.get(self.VPN)
+        self.cloud_params['network'] = self.properties.get(self.NETWORK)
+        self.cloud_params['extra'] = self.properties.get(self.EXTRA)
+
+
+        self.cloud_manager = vcloudservice.CloudManager(self.cloud_params)
+
         print "This is for adding vclouds"
 
     def handle_create(self):
-        cloud_params = dict()
-        cloud_params['cloud_type'] = self.properties.get(self.CLOUD_TYPE)
-        cloud_params['azname'] = self.properties.get(self.AZNAME)
-        cloud_params['availabilityzone'] = self.properties.get(self.AVAILABILITY_ZONE)
-        cloud_params['vcloud_url'] = self.properties.get(self.VCLOUD_URL)
-        cloud_params['vcloud_org'] = self.properties.get(self.VCLOUD_ORG)
-        cloud_params['vcloud_vdc'] = self.properties.get(self.VCLOUD_VDC)
-        cloud_params['vcloud_edgegw'] = self.properties.get(self.VCLOUD_EDGEGW)
-        cloud_params['username'] = self.properties.get(self.USER_NAME)
-        cloud_params['passwd'] = self.properties.get(self.PASSWD)
-        cloud_params['region_name'] = self.properties.get(self.REGION_NAME)
-        cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
-        cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
-        cloud_params['localmode'] = self.properties.get(self.LOCAL_MODE)
-        cloud_params['vcloud_publicip'] = self.properties.get(self.VCLOUD_PUBLIC_IP)
 
-        cloud_manager = vcloudservice.CloudManager(cloud_params)
-
-        return cloud_manager.add_cloud()
+        return self.cloud_manager.add_cloud()
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         print "This is for update vclouds"
 
     def handle_delete(self):
-        cloud_params = dict()
-        cloud_params['cloud_type'] = self.properties.get(self.CLOUD_TYPE)
-        cloud_params['azname'] = self.properties.get(self.AZNAME)
-        cloud_params['availabilityzone'] = self.properties.get(self.AVAILABILITY_ZONE)
-        cloud_params['vcloud_url'] = self.properties.get(self.VCLOUD_URL)
-        cloud_params['vcloud_org'] = self.properties.get(self.VCLOUD_ORG)
-        cloud_params['vcloud_vdc'] = self.properties.get(self.VCLOUD_VDC)
-        cloud_params['vcloud_edgegw'] = self.properties.get(self.VCLOUD_EDGEGW)
-        cloud_params['username'] = self.properties.get(self.USER_NAME)
-        cloud_params['passwd'] = self.properties.get(self.PASSWD)
-        cloud_params['region_name'] = self.properties.get(self.REGION_NAME)
-        cloud_params['driver_type'] = self.properties.get(self.DRIVER_TYPE)
-        cloud_params['access'] = self.properties.get(self.ENABLE_NETWORK_CROSS_CLOUDS)
-        cloud_params['localmode'] = self.properties.get(self.LOCAL_MODE)
-        cloud_params['vcloud_publicip'] = self.properties.get(self.VCLOUD_PUBLIC_IP)
 
-        cloud_manager = vcloudservice.CloudManager(cloud_params)
-        return cloud_manager.delete_cloud()
+        return self.cloud_manager.delete_cloud()
 
 class vCloudVpn(resource.Resource):
     PROPERTIES = (
@@ -1404,7 +1375,7 @@ class HwsCloud(resource.Resource):
         self.cloud_params['data_center'] = self.properties.get(self.DATA_CENTER)
         self.cloud_params['azname'] = self.properties.get(self.AZNAME)
         self.cloud_params['project_info'] = self.properties.get(self.PROJECT_INFO)
-        self.cloud_params['proxy_info'] = self.properties.get(self.PROXY)
+        self.cloud_params['proxy'] = self.properties.get(self.PROXY)
         self.cloud_params['cascaded_info'] = self.properties.get(self.CASCADED)
         self.cloud_params['vpn_info'] = self.properties.get(self.VPN)
         self.cloud_params['network'] = self.properties.get(self.NETWORK)
@@ -1798,5 +1769,5 @@ def resource_mapping():
         'OS::Heat::CloudVpn': CloudVpn,
         'OS::Heat::FusionSphereCloudVpn': FusionSphereCloudVpn,
         'OS::Heat::vCloudVpn': vCloudVpn,
-        'OS::Heat::HwsCloud': HwsCloud
+		'OS::Heat::HwsCloud': HwsCloud
     }
